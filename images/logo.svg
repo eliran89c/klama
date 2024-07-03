@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <style>
+    .kubernetes { fill: #326ce5; }
+    .ai { fill: #5f3dc4; }
+    .text { font-family: 'Roboto', sans-serif; font-size: 40px; font-weight: bold; fill: #333; }
+  </style>
+
+  <!-- Kubernetes wheel symbol -->
+  <path class="kubernetes" d="M100,20 a80,80 0 1,0 0,160 a80,80 0 1,0 0,-160 
+                               M100,60 a40,40 0 0,1 0,80 l-40,-40 l40,-40 Z" />
+  
+  <!-- Debugging magnifying glass -->
+  <g transform="translate(140, 165) rotate(-45)">
+    <circle class="kubernetes" cx="0" cy="0" r="17" />
+    <line x1="0" y1="0" x2="25" y2="-25" stroke="#326ce5" stroke-width="5" />
+  </g>
+
+  <!-- AI accent -->
+  <circle class="ai" cx="60" cy="60" r="10" />
+  <circle class="ai" cx="140" cy="60" r="10" />
+
+  <!-- Text -->
+  <text class="text" x="38" y="150">Klama</text>
+</svg>
