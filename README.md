@@ -77,11 +77,14 @@ agent:
       input: 0.003  # Price per 1K input tokens (optional)
       output: 0.015 # Price per 1K output tokens (optional)
 
-validation:
+validation: # Comment this block out to manually approve the agent commands
   model:
     name: "meta-llama/Meta-Llama-3-8B"
     base_url: "https://vllm.example.com/v1"
     auth_token: ""  # Set via KLAMA_VALIDATION_TOKEN environment variable
+    # pricing:
+    #   input: 0
+    #   output: 0
 ```
 
 If the validation model is not specified, Klama will prompt the user to approve each command before execution.
