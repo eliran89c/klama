@@ -63,12 +63,12 @@ func (l *Logger) Print(format string, a ...interface{}) {
 
 // Result prints a result message with a distinct symbol
 func (l *Logger) Result(format string, a ...interface{}) {
-	fmt.Fprintf(l.out, "%s %s\n", color.CyanString("🔍"), fmt.Sprintf(format, a...))
+	fmt.Fprintf(l.out, "%s %s\n", "🔍", fmt.Sprintf(format, a...))
 }
 
 // CostBreakdown prints a cost breakdown message with a distinct symbol
 func (l *Logger) CostBreakdown(format string, a ...interface{}) {
-	fmt.Fprintf(l.out, "%s %s\n", color.MagentaString("💰"), fmt.Sprintf(format, a...))
+	fmt.Fprintf(l.out, "%s %s\n", "💰", fmt.Sprintf(format, a...))
 }
 
 // StartThinking starts the thinking indication
@@ -95,7 +95,7 @@ func (l *Logger) StartThinking() {
 				fmt.Fprint(l.out, "\r \r") // Clear the thinking indication
 				return
 			case <-ticker.C:
-				fmt.Fprintf(l.out, "\r%s %c", color.CyanString("🤔"), chars[i%len(chars)])
+				fmt.Fprintf(l.out, "\r%s %c", "🤔", chars[i%len(chars)])
 				i++
 			}
 		}

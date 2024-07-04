@@ -91,6 +91,7 @@ func (ag *Agent) StartSession(ctx context.Context, exec Executer, q string) (str
 
 	for queryCount := 0; modelResp.NeedMoreData && queryCount < maxQueries; queryCount++ {
 		ag.Logger.Debug("Query count: %d", queryCount+1)
+		ag.Logger.Debug("Prompt:\n%s", prompt)
 
 		select {
 		case <-ctx.Done():
@@ -106,7 +107,7 @@ func (ag *Agent) StartSession(ctx context.Context, exec Executer, q string) (str
 				prompt = ag.handleCommand(ctx, exec, modelResp.RunCommand, executedCommands)
 
 			} else if modelResp.NeedMoreData {
-				prompt = "Any command to run?"
+				prompt = "Please suggest a command to run or end the session."
 			}
 		}
 	}
@@ -164,7 +165,6 @@ func (ag *Agent) handleCommand(ctx context.Context, exec Executer, command strin
 		return fmt.Sprintf("Command failed: %s", err.Error())
 	}
 
-	ag.Logger.Debug("Command output:\n%s", out)
 	if out == "" {
 		out = "No output"
 	}

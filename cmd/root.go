@@ -16,8 +16,6 @@ var rootCmd = &cobra.Command{
 using AI-powered assistance. It interacts with multiple language models to interpret 
 user queries, validate and execute safe Kubernetes commands, and provide insights 
 based on the results.`,
-	SilenceUsage:  true,
-	SilenceErrors: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
 			// Show usage if no prompt is provided

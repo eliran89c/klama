@@ -21,7 +21,7 @@ This approach allows for flexibility in model selection. A more capable model ca
 
 ## Requirements
 
-- Go 1.19 or higher
+- Go 1.22 or higher
 - Access to a Kubernetes cluster (for actual command execution)
 
 ## Installation
