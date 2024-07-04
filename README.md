@@ -8,6 +8,8 @@ Klama is a CLI tool that helps diagnose and troubleshoot Kubernetes-related issu
 
 ## How it works
 
+![Klama Demo - LLM validation](images/llm_validation.gif)
+
 1. Klama sends your query to the main AI model.
 2. The AI interprets the query and may suggest Kubernetes commands to gather more information.
 3. If a command is suggested, Klama will validate it for safety using either:
@@ -18,6 +20,7 @@ Klama is a CLI tool that helps diagnose and troubleshoot Kubernetes-related issu
 6. Klama presents the AI's findings and any relevant Kubernetes information.
 
 This approach allows for flexibility in model selection. A more capable model can be used for the main logic, while a faster, lighter model can optionally be used for command validation, potentially saving costs and increasing speed. If no validation model is provided, Klama will ask the user to approve each command before execution, ensuring safety and giving users full control over the commands run in their Kubernetes environment.
+
 
 ## Requirements
 
