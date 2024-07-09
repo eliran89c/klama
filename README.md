@@ -8,8 +8,6 @@ Klama is a CLI tool that helps diagnose and troubleshoot DevOps-related issues u
 
 ## How it works
 
-![Klama Demo - User Command Validation](images/user_validation.gif)
-
 1. Klama sends your DevOps-related query to the AI model.
 2. The AI, acting as a DevOps expert, interprets the query and may suggest commands to gather more information.
 3. If a command is suggested, Klama will ask for your approval before executing it.
