@@ -56,7 +56,7 @@ func (m Model) handleWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 	m.textarea.SetWidth(msg.Width - 4)
 	m.textarea.SetHeight(3)
 	m.confirmationInput.Width = msg.Width - 4
-	if !m.textarea.Focused() && !m.typing {
+	if !m.textarea.Focused() && !m.typing && !m.executing {
 		m.textarea.Focus()
 	}
 	return m, nil

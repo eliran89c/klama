@@ -95,19 +95,23 @@ Enter your question or issue.`)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	newStyle := func(color string) lipgloss.Style {
+		return lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+	}
+
 	return Model{
 		agent:             cfg.Agent,
 		executer:          cfg.Executer,
 		textarea:          textArea,
 		messages:          []string{},
 		viewport:          viewPort,
-		senderStyle:       lipgloss.NewStyle().Foreground(lipgloss.Color(ColorSender)),
-		klamaStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color(ColorKlama)),
-		systemStyle:       lipgloss.NewStyle().Foreground(lipgloss.Color(ColorSystem)),
-		errorStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color(ColorError)),
-		helpStyle:         lipgloss.NewStyle().Foreground(lipgloss.Color(ColorHelp)),
-		priceStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color(ColorPrice)),
-		typingStyle:       lipgloss.NewStyle().Foreground(lipgloss.Color(ColorHelp)),
+		senderStyle:       newStyle(ColorSender),
+		klamaStyle:        newStyle(ColorKlama),
+		systemStyle:       newStyle(ColorSystem),
+		errorStyle:        newStyle(ColorError),
+		helpStyle:         newStyle(ColorHelp),
+		priceStyle:        newStyle(ColorPrice),
+		typingStyle:       newStyle(ColorHelp),
 		windowWidth:       80,
 		windowHeight:      24,
 		ctx:               ctx,
