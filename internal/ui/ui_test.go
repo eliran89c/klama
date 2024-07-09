@@ -167,7 +167,7 @@ func TestWordWrap(t *testing.T) {
 
 func TestShowTypingAnimation(t *testing.T) {
 	model := Model{}
-	cmd := model.showTypingAnimation()
+	cmd := model.showWaitingAnimation()
 	assert.NotNil(t, cmd)
 }
 

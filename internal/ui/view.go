@@ -28,6 +28,8 @@ func (m Model) renderInputArea() string {
 		return m.confirmationInput.View()
 	case m.typing:
 		return m.typingStyle.Render("Klama is typing...")
+	case m.executing:
+		return m.systemStyle.Render("Command executing...")
 	default:
 		return m.textarea.View()
 	}
@@ -60,6 +62,9 @@ func (m *Model) updateMessages() {
 	}
 	if m.typing {
 		messages = append(messages, m.klamaStyle.Render("Klama: ")+strings.Repeat(".", m.typingDots))
+	}
+	if m.executing {
+		messages = append(messages, m.systemStyle.Render("System: ")+strings.Repeat(".", m.executingDots))
 	}
 	m.viewport.SetContent(strings.Join(messages, "\n\n"))
 	m.viewport.GotoBottom()
@@ -132,8 +137,8 @@ func wordWrap(text string, lineWidth int) []string {
 	return lines
 }
 
-// showTypingAnimation creates the typing animation effect.
-func (m Model) showTypingAnimation() tea.Cmd {
+// showWaitingAnimation creates the typing animation effect.
+func (m Model) showWaitingAnimation() tea.Cmd {
 	return tea.Tick(time.Millisecond*300, func(t time.Time) tea.Msg {
 		return tickMsg(t)
 	})

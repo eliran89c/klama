@@ -11,6 +11,8 @@ import (
 	"github.com/eliran89c/klama/internal/app/types"
 )
 
+type callingFunc func(string) tea.Cmd
+
 // Update handles all the application logic and state transitions.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -27,7 +29,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Update textarea if not typing
-	if !m.typing {
+	if !m.typing && !m.executing {
 		m.textarea, cmd = m.textarea.Update(msg)
 		cmds = append(cmds, cmd)
 	}
@@ -41,6 +43,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleTickMsg()
 	case types.AgentResponse:
 		return m.handleResponseMsg(msg)
+	case types.ExecuterResponse:
+		return m.handleExecutionResponse(msg)
 	case errMsg:
 		m.err = msg
 		return m, nil
@@ -72,7 +76,7 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyEnter:
 		return m.handleEnterKey()
 	default:
-		if !m.typing {
+		if !m.typing && !m.executing {
 			m.errorMsg = ""
 		}
 	}
@@ -94,7 +98,7 @@ func (m Model) handleReset() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
-	if m.typing {
+	if m.typing || m.executing {
 		return m, nil
 	}
 	if m.waitingForConfirmation {
@@ -115,7 +119,7 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 	m.updateMessages()
 	return m, tea.Batch(
 		m.waitForResponse(userMessage),
-		m.showTypingAnimation(),
+		m.showWaitingAnimation(),
 	)
 }
 
@@ -123,7 +127,12 @@ func (m Model) handleTickMsg() (tea.Model, tea.Cmd) {
 	if m.typing {
 		m.typingDots = (m.typingDots + 1) % 4
 		m.updateMessages()
-		return m, m.showTypingAnimation()
+		return m, m.showWaitingAnimation()
+	}
+	if m.executing {
+		m.executingDots = (m.executingDots + 1) % 4
+		m.updateMessages()
+		return m, m.showWaitingAnimation()
 	}
 	return m, nil
 }
@@ -147,34 +156,50 @@ func (m Model) handleResponseMsg(msg types.AgentResponse) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) handleConfirmation(userMessage string) (tea.Model, tea.Cmd) {
-	userMessage = strings.TrimSpace(strings.ToLower(userMessage))
-	execResponse := types.ExecuterResponse{
-		Result: "User did not approve the command, please suggest different command or end the session.",
-	}
-
-	switch userMessage {
-	case "yes", "y":
-		execResponse = m.executer.Run(m.ctx, m.confirmationCmd)
-		m.messages = append(m.messages, m.senderStyle.Render("You: ")+"yes...")
-	case "no", "n":
-		m.messages = append(m.messages, m.senderStyle.Render("You: ")+"no")
-	default:
-		m.errorMsg = "Please answer with 'yes' or 'no'."
-		m.confirmationInput.SetValue("")
-		return m, textinput.Blink
-	}
-
-	// constract the response message
+func (m Model) handleExecutionResponse(msg types.ExecuterResponse) (tea.Model, tea.Cmd) {
+	m.executing = false
 	var systemResponse string
-	if execResponse.Error != nil {
-		systemResponse = fmt.Sprintf("Failed to run the command\nError Message:%v\nCommand Output:%v", execResponse.Error.Error(), execResponse.Result)
+
+	if msg.Error != nil {
+		systemResponse = fmt.Sprintf("Failed to run the command\nError Message:%v\nCommand Output:%v", msg.Error.Error(), msg.Result)
 	} else {
-		systemResponse = fmt.Sprintf("Command Output:\n%v", execResponse.Result)
+		systemResponse = fmt.Sprintf("Command Output:\n%v", msg.Result)
 	}
 
 	if m.debug {
 		m.messages = append(m.messages, m.systemStyle.Render("System: ")+systemResponse)
+	}
+
+	m.typing = true
+	return m, tea.Batch(
+		m.waitForResponse(systemResponse),
+		m.showWaitingAnimation(),
+	)
+}
+
+func (m Model) handleConfirmation(userMessage string) (tea.Model, tea.Cmd) {
+	userMessage = strings.TrimSpace(strings.ToLower(userMessage))
+
+	var callback callingFunc
+	var message string
+
+	switch userMessage {
+	case "yes", "y":
+		m.messages = append(m.messages, m.senderStyle.Render("You: ")+"yes...")
+		m.executing = true
+		m.executingDots = 0
+		callback = m.waitForExecution
+		message = m.confirmationCmd
+	case "no", "n":
+		m.messages = append(m.messages, m.senderStyle.Render("You: ")+"no")
+		m.typing = true
+		m.typingDots = 0
+		callback = m.waitForResponse
+		message = "User did not approve the command, please suggest different command or end the session."
+	default:
+		m.errorMsg = "Please answer with 'yes' or 'no'."
+		m.confirmationInput.SetValue("")
+		return m, textinput.Blink
 	}
 
 	m.waitingForConfirmation = false
@@ -183,11 +208,10 @@ func (m Model) handleConfirmation(userMessage string) (tea.Model, tea.Cmd) {
 	m.confirmationInput.SetValue("")
 	m.textarea.Focus()
 	m.confirmationCmd = ""
-	m.typing = true
-	m.typingDots = 0
+
 	return m, tea.Batch(
-		m.waitForResponse(systemResponse),
-		m.showTypingAnimation(),
+		callback(message),
+		m.showWaitingAnimation(),
 	)
 }
 
@@ -213,6 +237,27 @@ func (m Model) waitForResponse(userMessage string) tea.Cmd {
 			return response
 		case err := <-errChan:
 			return errMsg(err)
+		case <-ctx.Done():
+			return errMsg(ctx.Err())
+		}
+	}
+}
+
+func (m Model) waitForExecution(command string) tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(m.ctx, 30*time.Second)
+		defer cancel()
+
+		responseChan := make(chan types.ExecuterResponse)
+
+		go func() {
+			response := m.executer.Run(ctx, command)
+			responseChan <- response
+		}()
+
+		select {
+		case response := <-responseChan:
+			return response
 		case <-ctx.Done():
 			return errMsg(ctx.Err())
 		}

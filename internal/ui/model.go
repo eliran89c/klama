@@ -45,8 +45,10 @@ type Model struct {
 	err                    error
 	errorMsg               string
 	typing                 bool
+	executing              bool
 	debug                  bool
 	typingDots             int
+	executingDots          int
 	waitingForConfirmation bool
 	confirmationInput      textinput.Model
 	confirmationCmd        string
