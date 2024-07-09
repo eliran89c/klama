@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -48,7 +49,12 @@ func TestInitialModel(t *testing.T) {
 
 	mockAgent.On("LogUsage").Return("Test usage")
 
-	model := InitialModel(mockAgent, mockExecuter, false)
+	cfg := Config{
+		Agent:    mockAgent,
+		Executer: mockExecuter,
+		Debug:    false,
+	}
+	model := InitialModel(cfg)
 
 	assert.NotNil(t, model)
 	assert.Equal(t, mockAgent, model.agent)
@@ -72,7 +78,13 @@ func TestModel_Update(t *testing.T) {
 	mockAgent.On("LogUsage").Return("Test usage")
 	mockAgent.On("Iterate", mock.Anything, mock.Anything).Return(types.AgentResponse{Answer: "Test answer"}, nil)
 
-	model := InitialModel(mockAgent, mockExecuter, false)
+	cfg := Config{
+		Agent:    mockAgent,
+		Executer: mockExecuter,
+		Debug:    false,
+	}
+
+	model := InitialModel(cfg)
 
 	// Test window size message
 	newModel, cmd := model.Update(tea.WindowSizeMsg{Width: 100, Height: 50})
@@ -114,7 +126,13 @@ func TestModel_waitForResponse(t *testing.T) {
 
 	mockAgent.On("LogUsage").Return("Test usage")
 
-	model := InitialModel(mockAgent, mockExecuter, false)
+	cfg := Config{
+		Agent:    mockAgent,
+		Executer: mockExecuter,
+		Debug:    false,
+	}
+
+	model := InitialModel(cfg)
 
 	// Test successful response
 	mockAgent.On("Iterate", mock.Anything, "test message").Return(types.AgentResponse{Answer: "Test answer"}, nil)
@@ -177,7 +195,13 @@ func TestRenderInputArea(t *testing.T) {
 
 	mockAgent.On("LogUsage").Return("Test usage")
 
-	model := InitialModel(mockAgent, mockExecuter, false)
+	cfg := Config{
+		Agent:    mockAgent,
+		Executer: mockExecuter,
+		Debug:    false,
+	}
+
+	model := InitialModel(cfg)
 
 	// Test normal state
 	result := model.renderInputArea()
@@ -192,7 +216,7 @@ func TestRenderInputArea(t *testing.T) {
 	model.waitingForConfirmation = false
 	model.typing = true
 	result = model.renderInputArea()
-	assert.Contains(t, result, "Klama is typing...")
+	assert.Contains(t, result, "Klama is typing")
 }
 
 func TestRenderErrorMessage(t *testing.T) {
@@ -201,8 +225,15 @@ func TestRenderErrorMessage(t *testing.T) {
 
 	mockAgent.On("LogUsage").Return("Test usage")
 
-	model := InitialModel(mockAgent, mockExecuter, false)
-	model.errorMsg = "Test error"
+	cfg := Config{
+		Agent:    mockAgent,
+		Executer: mockExecuter,
+		Debug:    false,
+	}
+
+	model := InitialModel(cfg)
+
+	model.err = fmt.Errorf("Test error")
 	result := model.renderErrorMessage()
 	assert.Contains(t, result, "Test error")
 }
@@ -213,7 +244,14 @@ func TestRenderHelpText(t *testing.T) {
 
 	mockAgent.On("LogUsage").Return("Test usage")
 
-	model := InitialModel(mockAgent, mockExecuter, false)
+	cfg := Config{
+		Agent:    mockAgent,
+		Executer: mockExecuter,
+		Debug:    false,
+	}
+
+	model := InitialModel(cfg)
+
 	result := model.renderHelpText()
 	assert.Contains(t, result, "Ctrl+C: exit")
 	assert.Contains(t, result, "Ctrl+R: restart")
@@ -224,7 +262,13 @@ func TestRenderHelpText(t *testing.T) {
 func TestRenderPriceText(t *testing.T) {
 	mockAgent := new(MockAgent)
 	mockAgent.On("LogUsage").Return("Test usage")
-	model := InitialModel(mockAgent, new(MockExecuter), false)
+	cfg := Config{
+		Agent:    mockAgent,
+		Executer: new(MockExecuter),
+		Debug:    false,
+	}
+
+	model := InitialModel(cfg)
 	result := model.renderPriceText()
 	assert.Contains(t, result, "Test usage")
 }

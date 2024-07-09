@@ -11,24 +11,19 @@ import (
 	"github.com/eliran89c/klama/internal/app/types"
 )
 
-type callingFunc func(string) tea.Cmd
-
 // Update handles all the application logic and state transitions.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
-	// Update viewport
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
 
-	// Update confirmation input if waiting for confirmation
 	if m.waitingForConfirmation {
 		m.confirmationInput, cmd = m.confirmationInput.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
-	// Update textarea if not typing
 	if !m.typing && !m.executing {
 		m.textarea, cmd = m.textarea.Update(msg)
 		cmds = append(cmds, cmd)
@@ -77,7 +72,7 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleEnterKey()
 	default:
 		if !m.typing && !m.executing {
-			m.errorMsg = ""
+			m.err = nil
 		}
 	}
 	return m, nil
@@ -91,7 +86,11 @@ func (m Model) handleExit() (tea.Model, tea.Cmd) {
 func (m Model) handleReset() (tea.Model, tea.Cmd) {
 	m.cancel()
 	m.agent.Reset()
-	newModel := InitialModel(m.agent, m.executer, m.debug)
+	newModel := InitialModel(Config{
+		Agent:    m.agent,
+		Executer: m.executer,
+		Debug:    m.debug,
+	})
 	newModel.windowWidth = m.windowWidth
 	newModel.windowHeight = m.windowHeight
 	return newModel.Update(tea.WindowSizeMsg{Width: m.windowWidth, Height: m.windowHeight})
@@ -107,10 +106,10 @@ func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
 
 	userMessage := strings.TrimSpace(m.textarea.Value())
 	if userMessage == "" {
-		m.errorMsg = "Message cannot be empty"
+		m.err = fmt.Errorf("message cannot be empty")
 		return m, nil
 	}
-	m.errorMsg = ""
+	m.err = nil
 
 	m.messages = append(m.messages, m.senderStyle.Render("You: ")+userMessage)
 	m.textarea.Reset()
@@ -180,7 +179,7 @@ func (m Model) handleExecutionResponse(msg types.ExecuterResponse) (tea.Model, t
 func (m Model) handleConfirmation(userMessage string) (tea.Model, tea.Cmd) {
 	userMessage = strings.TrimSpace(strings.ToLower(userMessage))
 
-	var callback callingFunc
+	var callback func(string) tea.Cmd
 	var message string
 
 	switch userMessage {
@@ -197,7 +196,7 @@ func (m Model) handleConfirmation(userMessage string) (tea.Model, tea.Cmd) {
 		callback = m.waitForResponse
 		message = "User did not approve the command, please suggest different command or end the session."
 	default:
-		m.errorMsg = "Please answer with 'yes' or 'no'."
+		m.err = fmt.Errorf("please answer with 'yes' or 'no'")
 		m.confirmationInput.SetValue("")
 		return m, textinput.Blink
 	}
@@ -220,26 +219,11 @@ func (m Model) waitForResponse(userMessage string) tea.Cmd {
 		ctx, cancel := context.WithTimeout(m.ctx, 30*time.Second)
 		defer cancel()
 
-		responseChan := make(chan types.AgentResponse)
-		errChan := make(chan error)
-
-		go func() {
-			response, err := m.agent.Iterate(ctx, userMessage)
-			if err != nil {
-				errChan <- err
-				return
-			}
-			responseChan <- response
-		}()
-
-		select {
-		case response := <-responseChan:
-			return response
-		case err := <-errChan:
+		response, err := m.agent.Iterate(ctx, userMessage)
+		if err != nil {
 			return errMsg(err)
-		case <-ctx.Done():
-			return errMsg(ctx.Err())
 		}
+		return response
 	}
 }
 
@@ -248,18 +232,6 @@ func (m Model) waitForExecution(command string) tea.Cmd {
 		ctx, cancel := context.WithTimeout(m.ctx, 30*time.Second)
 		defer cancel()
 
-		responseChan := make(chan types.ExecuterResponse)
-
-		go func() {
-			response := m.executer.Run(ctx, command)
-			responseChan <- response
-		}()
-
-		select {
-		case response := <-responseChan:
-			return response
-		case <-ctx.Done():
-			return errMsg(ctx.Err())
-		}
+		return m.executer.Run(ctx, command)
 	}
 }

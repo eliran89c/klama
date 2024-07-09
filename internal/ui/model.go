@@ -30,66 +30,77 @@ type (
 
 // Model represents the application state.
 type Model struct {
-	agent                  types.Agent
-	executer               types.Executer
-	viewport               viewport.Model
+	// Dependencies
+	agent    types.Agent
+	executer types.Executer
+
+	// UI Components
+	viewport          viewport.Model
+	textarea          textarea.Model
+	confirmationInput textinput.Model
+
+	// Styles
+	senderStyle lipgloss.Style
+	klamaStyle  lipgloss.Style
+	systemStyle lipgloss.Style
+	errorStyle  lipgloss.Style
+	helpStyle   lipgloss.Style
+	priceStyle  lipgloss.Style
+	typingStyle lipgloss.Style
+
+	// State
 	messages               []string
-	textarea               textarea.Model
-	senderStyle            lipgloss.Style
-	klamaStyle             lipgloss.Style
-	systemStyle            lipgloss.Style
-	errorStyle             lipgloss.Style
-	helpStyle              lipgloss.Style
-	priceStyle             lipgloss.Style
-	typingStyle            lipgloss.Style
 	err                    error
-	errorMsg               string
 	typing                 bool
 	executing              bool
 	debug                  bool
 	typingDots             int
 	executingDots          int
 	waitingForConfirmation bool
-	confirmationInput      textinput.Model
 	confirmationCmd        string
-	windowWidth            int
-	windowHeight           int
-	ctx                    context.Context
-	cancel                 context.CancelFunc
+
+	// Window
+	windowWidth  int
+	windowHeight int
+
+	// Context
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
-// Init initializes the Model.
-func (m Model) Init() tea.Cmd {
-	return tea.Batch(textarea.Blink, textinput.Blink)
+// Config holds the configuration for initializing the Model
+type Config struct {
+	Agent    types.Agent
+	Executer types.Executer
+	Debug    bool
 }
 
 // InitialModel creates and returns a new instance of Model with default values.
-func InitialModel(agent types.Agent, executer types.Executer, debug bool) Model {
-	ta := textarea.New()
-	ta.Placeholder = "Send a message..."
-	ta.Focus()
-	ta.Prompt = "┃ "
-	ta.CharLimit = 280
-	ta.ShowLineNumbers = false
+func InitialModel(cfg Config) Model {
+	textArea := textarea.New()
+	textArea.Placeholder = "Send a message..."
+	textArea.Focus()
+	textArea.Prompt = "┃ "
+	textArea.CharLimit = 280
+	textArea.ShowLineNumbers = false
+	textArea.KeyMap.InsertNewline.SetEnabled(false)
 
-	vp := viewport.New(80, 20)
-	vp.SetContent(`Welcome to Klama!
+	viewPort := viewport.New(80, 20)
+	viewPort.SetContent(`Welcome to Klama!
 Enter your question or issue.`)
 
-	ta.KeyMap.InsertNewline.SetEnabled(false)
-
-	ci := textinput.New()
-	ci.Placeholder = "To approve the command, type 'yes'. To reject it, type 'no'."
-	ci.CharLimit = 3
+	confirmationInput := textinput.New()
+	confirmationInput.Placeholder = "To approve the command, type 'yes'. To reject it, type 'no'."
+	confirmationInput.CharLimit = 3
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return Model{
-		agent:             agent,
-		executer:          executer,
-		textarea:          ta,
+		agent:             cfg.Agent,
+		executer:          cfg.Executer,
+		textarea:          textArea,
 		messages:          []string{},
-		viewport:          vp,
+		viewport:          viewPort,
 		senderStyle:       lipgloss.NewStyle().Foreground(lipgloss.Color(ColorSender)),
 		klamaStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color(ColorKlama)),
 		systemStyle:       lipgloss.NewStyle().Foreground(lipgloss.Color(ColorSystem)),
@@ -101,7 +112,12 @@ Enter your question or issue.`)
 		windowHeight:      24,
 		ctx:               ctx,
 		cancel:            cancel,
-		confirmationInput: ci,
-		debug:             debug,
+		confirmationInput: confirmationInput,
+		debug:             cfg.Debug,
 	}
+}
+
+// Init initializes the Model.
+func (m Model) Init() tea.Cmd {
+	return tea.Batch(textarea.Blink, textinput.Blink)
 }

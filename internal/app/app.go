@@ -34,7 +34,13 @@ func Run(debug bool, agentType types.AgentType, execType types.ExecuterType) err
 		return fmt.Errorf("failed to initialize executer: %w", err)
 	}
 
-	p := tea.NewProgram(ui.InitialModel(agent, exec, debug), tea.WithAltScreen())
+	uiConfig := ui.Config{
+		Agent:    agent,
+		Executer: exec,
+		Debug:    debug,
+	}
+
+	p := tea.NewProgram(ui.InitialModel(uiConfig), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		return fmt.Errorf("error running program: %w", err)
 	}

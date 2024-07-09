@@ -27,9 +27,9 @@ func (m Model) renderInputArea() string {
 	case m.waitingForConfirmation:
 		return m.confirmationInput.View()
 	case m.typing:
-		return m.typingStyle.Render("Klama is typing...")
+		return m.typingStyle.Render("Klama is typing" + strings.Repeat(".", m.typingDots))
 	case m.executing:
-		return m.systemStyle.Render("Command executing...")
+		return m.typingStyle.Render("Command executing" + strings.Repeat(".", m.executingDots))
 	default:
 		return m.textarea.View()
 	}
@@ -37,7 +37,10 @@ func (m Model) renderInputArea() string {
 
 // renderErrorMessage renders the error message if present.
 func (m Model) renderErrorMessage() string {
-	return m.errorStyle.Render(m.errorMsg)
+	if m.err != nil {
+		return m.errorStyle.Render(m.err.Error())
+	}
+	return ""
 }
 
 // renderHelpText renders the help text.
@@ -59,12 +62,6 @@ func (m *Model) updateMessages() {
 	var messages []string
 	for _, msg := range m.messages {
 		messages = append(messages, wrapMessage(msg, m.viewport.Width))
-	}
-	if m.typing {
-		messages = append(messages, m.klamaStyle.Render("Klama: ")+strings.Repeat(".", m.typingDots))
-	}
-	if m.executing {
-		messages = append(messages, m.systemStyle.Render("System: ")+strings.Repeat(".", m.executingDots))
 	}
 	m.viewport.SetContent(strings.Join(messages, "\n\n"))
 	m.viewport.GotoBottom()
