@@ -142,7 +142,18 @@ func (m Model) handleResponseMsg(msg types.AgentResponse) (tea.Model, tea.Cmd) {
 	if msg.RunCommand != "" {
 		m.waitingForConfirmation = true
 		m.confirmationCmd = msg.RunCommand
-		m.messages = append(m.messages, m.klamaStyle.Render("Klama: ")+fmt.Sprintf("I suggest running the command "+m.systemStyle.Render(msg.RunCommand)+"\n%v", msg.Reason))
+
+		// create klama response
+		klamaResp := m.klamaStyle.Render("Klama: ")
+
+		if msg.Answer != "" {
+			klamaResp += msg.Answer + "\n"
+		}
+
+		klamaResp += "I suggest running the command `" + m.systemStyle.Render(msg.RunCommand)
+		klamaResp += fmt.Sprintf("`\n%v", msg.Reason)
+
+		m.messages = append(m.messages, klamaResp)
 		m.updateMessages()
 		m.confirmationInput.Focus()
 		m.textarea.Blur()
