@@ -56,7 +56,7 @@ Klama will not run if these required fields are missing from the configuration f
 Klama requires an OpenAI or OpenAI-compatible server to function. The application has been tested with the following frameworks and services:
 
 - OpenAI models
-- Self-hosted models using [vLLM](https://github.com/vllm-project/vllm)
+- Self-hosted models using [vLLM](https://medium.com/@eliran89c/how-to-deploy-a-self-hosted-llm-on-eks-and-why-you-should-e9184e366e0a)
 - Amazon Bedrock models via [Bedrock Access Gateway](https://github.com/aws-samples/bedrock-access-gateway)
 
 While these have been specifically tested, any server that implements the OpenAI API should be compatible with Klama.

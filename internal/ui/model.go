@@ -103,7 +103,7 @@ func InitialModel(cfg Config) Model {
 Enter your question or issue.`)
 
 	confirmationInput := textinput.New()
-	confirmationInput.Placeholder = "To approve the command, type 'yes'. To reject it, type 'no'."
+	confirmationInput.Placeholder = "'yes' to approve, 'no' to reject, 'ask' to break out and ask a question"
 	confirmationInput.CharLimit = 3
 
 	ctx, cancel := context.WithCancel(context.Background())
