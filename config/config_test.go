@@ -21,11 +21,6 @@ func TestLoad(t *testing.T) {
 	viper.Set("agent.auth_token", "test-token")
 	viper.Set("agent.pricing.input", 0.01)
 	viper.Set("agent.pricing.output", 0.02)
-	viper.Set("validation.name", "test-validation")
-	viper.Set("validation.base_url", "http://validation.com")
-	viper.Set("validation.auth_token", "validation-token")
-	viper.Set("validation.pricing.input", 0.005)
-	viper.Set("validation.pricing.output", 0.01)
 
 	// Test Load function
 	cfg, err := Load()
@@ -38,12 +33,6 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, "test-token", cfg.Agent.AuthToken)
 	assert.Equal(t, 0.01, cfg.Agent.Pricing.Input)
 	assert.Equal(t, 0.02, cfg.Agent.Pricing.Output)
-
-	assert.Equal(t, "test-validation", cfg.Validation.Name)
-	assert.Equal(t, "http://validation.com", cfg.Validation.BaseURL)
-	assert.Equal(t, "validation-token", cfg.Validation.AuthToken)
-	assert.Equal(t, 0.005, cfg.Validation.Pricing.Input)
-	assert.Equal(t, 0.01, cfg.Validation.Pricing.Output)
 }
 
 // TestValidateConfig tests the validateConfig function.
@@ -95,40 +84,6 @@ func TestValidateConfig(t *testing.T) {
 	}
 }
 
-// TestUseModelForValidation tests the UseModelForValidation method.
-func TestUseModelForValidation(t *testing.T) {
-	tests := []struct {
-		name   string
-		config *Config
-		want   bool
-	}{
-		{
-			name: "Validation model configured",
-			config: &Config{
-				Validation: ModelConfig{
-					Name:    "test-validation",
-					BaseURL: "http://validation.com",
-				},
-			},
-			want: true,
-		},
-		{
-			name: "Validation model not configured",
-			config: &Config{
-				Validation: ModelConfig{},
-			},
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.config.UseModelForValidation()
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 // TestLoadWithEnvironmentVariables tests loading configuration with environment variables.
 func TestLoadWithEnvironmentVariables(t *testing.T) {
 	// Set environment variables
@@ -155,5 +110,4 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 
 	// Check if environment variables override configuration
 	assert.Equal(t, "env-agent-token", cfg.Agent.AuthToken)
-	assert.Equal(t, "env-validation-token", cfg.Validation.AuthToken)
 }

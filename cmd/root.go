@@ -7,30 +7,18 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-
-var rootCmd = &cobra.Command{
-	Use:   "klama [flags] \"prompt\"",
-	Short: "Klama is an AI-powered Kubernetes debugging assistant",
-	Long: `Klama is a CLI tool that helps diagnose and troubleshoot Kubernetes-related issues 
+var (
+	cfgFile string
+	rootCmd = &cobra.Command{
+		Use:   "klama [flags] \"prompt\"",
+		Short: "Klama is an AI-powered DevOps assistant.",
+		Long: `Klama is a CLI tool that helps diagnose and troubleshoot DevOps-related issues 
 using AI-powered assistance. It interacts with multiple language models to interpret 
-user queries, validate and execute safe Kubernetes commands, and provide insights 
+user queries, validate and execute commands, and provide insights 
 based on the results.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			// Show usage if no prompt is provided
-			cmd.Help()
-			return
-		}
-		prompt := args[0]
-		debug := viper.GetBool("debug")
-		showUsage := viper.GetBool("show-usage")
+	}
+)
 
-		run(prompt, debug, showUsage)
-	},
-}
-
-// Execute runs the root command
 func Execute() error {
 	return rootCmd.Execute()
 }
@@ -38,12 +26,14 @@ func Execute() error {
 func init() {
 	cobra.OnInitialize(initConfig)
 
+	// Add subcommands
+	rootCmd.AddCommand(k8sCmd)
+
+	// add global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.klama.yaml)")
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug mode")
-	rootCmd.PersistentFlags().Bool("show-usage", false, "Show usage information")
 
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
-	viper.BindPFlag("show-usage", rootCmd.PersistentFlags().Lookup("show-usage"))
 }
 
 func initConfig() {

@@ -2,30 +2,25 @@
   <img src="images/logo.svg" alt="Klama Logo" width="200">
 </div>
 
-# Klama - Kubernetes Debugging Assistant
+# Klama - AI-powered DevOps Debugging Assistant
 
-Klama is a CLI tool that helps diagnose and troubleshoot Kubernetes-related issues using AI-powered assistance. It interacts with language models to interpret user queries, validate and execute safe Kubernetes commands, and provide insights based on the results.
+Klama is a CLI tool that helps diagnose and troubleshoot DevOps-related issues using AI-powered assistance. It interacts with language models to interpret user queries, suggest and execute safe commands, and provide insights based on the results. Currently, Klama supports Kubernetes (K8s) debugging, with plans to expand to other DevOps domains in the future.
 
 ## How it works
 
-![Klama Demo - LLM validation](images/llm_validation.gif)
-
-1. Klama sends your query to the main AI model.
-2. The AI interprets the query and may suggest Kubernetes commands to gather more information.
-3. If a command is suggested, Klama will validate it for safety using either:
-   - A separate AI model (if provided in the configuration)
-   - User approval (if no validation model is configured)
-4. The command is executed if deemed safe, and the output is sent back to the main AI for further analysis.
+1. Klama sends your DevOps-related query to the AI model.
+2. The AI, acting as a DevOps expert, interprets the query and may suggest commands to gather more information.
+3. If a command is suggested, Klama will ask for your approval before executing it.
+4. The command is executed if approved, and the output is sent back to the AI for further analysis.
 5. This process repeats until the AI has enough information to provide a final answer.
-6. Klama presents the AI's findings and any relevant Kubernetes information.
+6. Klama presents the AI's findings and any relevant information.
 
-This approach allows for flexibility in model selection. A more capable model can be used for the main logic, while a faster, lighter model can optionally be used for command validation, potentially saving costs and increasing speed. If no validation model is provided, Klama will ask the user to approve each command before execution, ensuring safety and giving users full control over the commands run in their Kubernetes environment.
-
+This approach ensures safety and gives users full control over the commands run in their environment.
 
 ## Requirements
 
 - Go 1.22 or higher
-- Access to a Kubernetes cluster (for actual command execution)
+- Access to a Kubernetes cluster (for K8s-related command execution)
 
 ## Installation
 
@@ -39,7 +34,7 @@ This will download the source code, compile it, and install the `klama` binary i
 
 ## Configuration
 
-Klama requires a YAML configuration file to set up the AI models. The configuration file is searched for in the following order:
+Klama requires a YAML configuration file to set up the AI model. The configuration file is searched for in the following order:
 
 1. Custom location specified by the `--config` flag
 2. `$HOME/.klama.yaml`
@@ -51,8 +46,8 @@ A valid configuration file with at least the required fields must be present for
 
 The following fields are required in your configuration:
 
-- `agent.name`: The name of the main AI model
-- `agent.base_url`: The API endpoint for the main AI model
+- `agent.name`: The name of the AI model
+- `agent.base_url`: The API endpoint for the AI model
 
 Klama will not run if these required fields are missing from the configuration file.
 
@@ -72,37 +67,23 @@ Create a file named `.klama.yaml` in your home directory or in the directory whe
 
 ```yaml
 agent:
-  model:
-    name: "anthropic.claude-3-5-sonnet-20240620-v1:0"  # Required
-    base_url: "https://bedrock-gateway.example.com/api/v1"  # Required
-    auth_token: ""  # Set via KLAMA_AGENT_TOKEN environment variable
-    pricing: # Optional, will be used to calculate session price
-      input: 0.003  # Price per 1K input tokens (optional)
-      output: 0.015 # Price per 1K output tokens (optional)
-
-validation: # Comment this block out to manually approve the agent commands
-  model:
-    name: "meta-llama/Meta-Llama-3-8B"
-    base_url: "https://vllm.example.com/v1"
-    auth_token: ""  # Set via KLAMA_VALIDATION_TOKEN environment variable
-    # pricing:
-    #   input: 0
-    #   output: 0
+  name: "anthropic.claude-3-5-sonnet-20240620-v1:0"  # Required
+  base_url: "https://bedrock-gateway.example.com/api/v1"  # Required
+  auth_token: ""  # Set via KLAMA_AGENT_TOKEN environment variable
+  pricing: # Optional, will be used to calculate session price
+    input: 0.003  # Price per 1K input tokens (optional)
+    output: 0.015 # Price per 1K output tokens (optional)
 ```
-
-If the validation model is not specified, Klama will prompt the user to approve each command before execution.
 
 ### Environment Variables
 
-You can set the authentication tokens using environment variables:
+You can set the authentication token using an environment variable:
 
 - `KLAMA_AGENT_TOKEN`: Set the authentication token for the agent model
-- `KLAMA_VALIDATION_TOKEN`: Set the authentication token for the validation model
 
 Example:
 ```sh
 export KLAMA_AGENT_TOKEN="your-agent-token-here"
-export KLAMA_VALIDATION_TOKEN="your-validation-model-token-here"
 ```
 
 ### Command-Line Configuration
@@ -110,34 +91,38 @@ export KLAMA_VALIDATION_TOKEN="your-validation-model-token-here"
 You can specify a custom configuration file location using the `--config` flag:
 
 ```sh
-klama --config /path/to/your/config.yaml "Your Kubernetes query here"
+klama --config /path/to/your/config.yaml k8s
 ```
 
 ## Usage
 
-Run Klama with your Kubernetes-related query:
+Currently, Klama provides one main subcommand:
+
+### `k8s`: Interact with the Kubernetes debugging assistant
+
+Run Klama with the `k8s` subcommand to start a Kubernetes debugging session:
 
 ```sh
-klama [flags] <prompt>
+klama k8s
 ```
 
-For example:
-```sh
-klama "Why is my pod not starting?"
-```
+This will start an interactive session where you can ask Kubernetes-related questions and get AI-powered assistance.
 
 ### Flags
 
 - `--config`: Specify a custom configuration file location
 - `--debug`: Enable debug mode
-- `--show-usage`: Show usage information
 
 Example with flags:
 ```sh
-klama --debug --config /path/to/config.yaml "Check the status of all pods"
+klama k8s --debug --config /path/to/config.yaml
 ```
 
 If Klama fails to start due to missing or invalid configuration, it will provide an error message indicating the issue. Ensure that your configuration file is properly formatted and contains all required fields before running Klama.
+
+## Future Developments
+
+While Klama currently focuses on Kubernetes debugging, there are plans to expand its capabilities to cover other DevOps domains in the future. Stay tuned for updates!
 
 ## Contributing
 

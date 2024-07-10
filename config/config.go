@@ -20,8 +20,7 @@ type Pricing struct {
 }
 
 type Config struct {
-	Agent      ModelConfig `mapstructure:"agent"`
-	Validation ModelConfig `mapstructure:"validation"`
+	Agent ModelConfig `mapstructure:"agent"`
 }
 
 func Load() (*Config, error) {
@@ -40,9 +39,6 @@ func Load() (*Config, error) {
 	if envToken := os.Getenv("KLAMA_AGENT_TOKEN"); envToken != "" {
 		config.Agent.AuthToken = envToken
 	}
-	if envToken := os.Getenv("KLAMA_VALIDATION_TOKEN"); envToken != "" {
-		config.Validation.AuthToken = envToken
-	}
 
 	return &config, nil
 }
@@ -56,8 +52,4 @@ func validateConfig(config *Config) error {
 	}
 
 	return nil
-}
-
-func (c *Config) UseModelForValidation() bool {
-	return c.Validation.BaseURL != "" && c.Validation.Name != ""
 }
