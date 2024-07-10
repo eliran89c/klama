@@ -43,6 +43,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleExecutionResponse(msg)
 	case errMsg:
 		m.err = msg
+		if m.typing {
+			m.typing = false
+		}
+		if m.executing {
+			m.executing = false
+		}
 		return m, nil
 	}
 
@@ -199,16 +205,18 @@ func (m Model) handleConfirmation(userMessage string) (tea.Model, tea.Cmd) {
 		m.messages = append(m.messages, m.senderStyle.Render("You: ")+"yes...")
 		m.executing = true
 		m.executingDots = 0
-		callback = m.waitForExecution
 		message = m.confirmationCmd
+		callback = m.waitForExecution
 	case "no", "n":
 		m.messages = append(m.messages, m.senderStyle.Render("You: ")+"no")
 		m.typing = true
 		m.typingDots = 0
-		callback = m.waitForResponse
 		message = "User did not approve the command, please suggest different command or end the session."
+		callback = m.waitForResponse
+	case "ask", "a":
+		callback = nil
 	default:
-		m.err = fmt.Errorf("please answer with 'yes' or 'no'")
+		m.err = fmt.Errorf("please answer with 'yes', 'no' or 'ask'")
 		m.confirmationInput.SetValue("")
 		return m, textinput.Blink
 	}
@@ -219,6 +227,10 @@ func (m Model) handleConfirmation(userMessage string) (tea.Model, tea.Cmd) {
 	m.confirmationInput.SetValue("")
 	m.textarea.Focus()
 	m.confirmationCmd = ""
+
+	if callback == nil {
+		return m, nil
+	}
 
 	return m, tea.Batch(
 		callback(message),
