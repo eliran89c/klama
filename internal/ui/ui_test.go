@@ -9,7 +9,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/eliran89c/klama/internal/app/types"
+	"github.com/eliran89c/klama/internal/agent"
+	"github.com/eliran89c/klama/internal/executer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -19,9 +20,9 @@ type MockAgent struct {
 	mock.Mock
 }
 
-func (m *MockAgent) Iterate(ctx context.Context, prompt string) (types.AgentResponse, error) {
+func (m *MockAgent) Iterate(ctx context.Context, prompt string) (agent.AgentResponse, error) {
 	args := m.Called(ctx, prompt)
-	return args.Get(0).(types.AgentResponse), args.Error(1)
+	return args.Get(0).(agent.AgentResponse), args.Error(1)
 }
 
 func (m *MockAgent) Reset() {
@@ -38,9 +39,9 @@ type MockExecuter struct {
 	mock.Mock
 }
 
-func (m *MockExecuter) Run(ctx context.Context, command string) types.ExecuterResponse {
+func (m *MockExecuter) Run(ctx context.Context, command string) executer.ExecuterResponse {
 	args := m.Called(ctx, command)
-	return args.Get(0).(types.ExecuterResponse)
+	return args.Get(0).(executer.ExecuterResponse)
 }
 
 func TestInitialModel(t *testing.T) {
@@ -76,7 +77,7 @@ func TestModel_Update(t *testing.T) {
 	mockExecuter := new(MockExecuter)
 
 	mockAgent.On("LogUsage").Return("Test usage")
-	mockAgent.On("Iterate", mock.Anything, mock.Anything).Return(types.AgentResponse{Answer: "Test answer"}, nil)
+	mockAgent.On("Iterate", mock.Anything, mock.Anything).Return(agent.AgentResponse{Answer: "Test answer"}, nil)
 
 	cfg := Config{
 		Agent:    mockAgent,
@@ -105,7 +106,7 @@ func TestModel_Update(t *testing.T) {
 	assert.NotNil(t, cmd)
 
 	// Test agent response message
-	agentResponse := types.AgentResponse{Answer: "Test answer", RunCommand: ""}
+	agentResponse := agent.AgentResponse{Answer: "Test answer", RunCommand: ""}
 	newModel, cmd = model.Update(agentResponse)
 	updatedModel = newModel.(Model)
 	assert.False(t, updatedModel.typing)
@@ -135,14 +136,14 @@ func TestModel_waitForResponse(t *testing.T) {
 	model := InitialModel(cfg)
 
 	// Test successful response
-	mockAgent.On("Iterate", mock.Anything, "test message").Return(types.AgentResponse{Answer: "Test answer"}, nil)
+	mockAgent.On("Iterate", mock.Anything, "test message").Return(agent.AgentResponse{Answer: "Test answer"}, nil)
 	cmd := model.waitForResponse("test message")
 	msg := cmd()
-	assert.IsType(t, types.AgentResponse{}, msg)
+	assert.IsType(t, agent.AgentResponse{}, msg)
 
 	// Test error response
 	testError := errors.New("Test error")
-	mockAgent.On("Iterate", mock.Anything, "error message").Return(types.AgentResponse{}, testError)
+	mockAgent.On("Iterate", mock.Anything, "error message").Return(agent.AgentResponse{}, testError)
 	cmd = model.waitForResponse("error message")
 	msg = cmd()
 	assert.Error(t, msg.(error))
@@ -152,7 +153,7 @@ func TestModel_waitForResponse(t *testing.T) {
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 	model.ctx = timeoutCtx
-	mockAgent.On("Iterate", mock.Anything, "timeout message").Return(types.AgentResponse{}, context.DeadlineExceeded)
+	mockAgent.On("Iterate", mock.Anything, "timeout message").Return(agent.AgentResponse{}, context.DeadlineExceeded)
 	cmd = model.waitForResponse("timeout message")
 	msg = cmd()
 	assert.Error(t, msg.(error))

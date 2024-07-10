@@ -8,13 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewUserExecuter(t *testing.T) {
+func TestNewTerminalExecuter(t *testing.T) {
 	ux := NewTerminalExecuter()
 	assert.NotNil(t, ux)
 	assert.Empty(t, ux.executedCommands)
 }
 
-func TestUserExecuter_Run(t *testing.T) {
+func TestTerminalExecuter_Run(t *testing.T) {
 	ux := NewTerminalExecuter()
 
 	tests := []struct {
@@ -56,7 +56,7 @@ func TestUserExecuter_Run(t *testing.T) {
 	}
 }
 
-func TestUserExecuter_Run_CachedCommand(t *testing.T) {
+func TestTerminalExecuter_Run_CachedCommand(t *testing.T) {
 	ux := NewTerminalExecuter()
 	command := "echo 'Cached command'"
 
@@ -71,7 +71,7 @@ func TestUserExecuter_Run_CachedCommand(t *testing.T) {
 	assert.Equal(t, result1.Result, result2.Result)
 }
 
-func TestUserExecuter_Run_ContextCancellation(t *testing.T) {
+func TestTerminalExecuter_Run_ContextCancellation(t *testing.T) {
 	ux := NewTerminalExecuter()
 	command := "sleep 5" // A command that takes longer than our timeout
 

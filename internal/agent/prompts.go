@@ -1,16 +1,10 @@
-package kagent
+package agent
 
-import (
-	"context"
-	"fmt"
-
-	"github.com/eliran89c/klama/internal/app/types"
-	"github.com/eliran89c/klama/internal/llm"
-)
+// AgentType represents the type of agent available
+type AgentType string
 
 const (
-	modelCorrectionAttempts = 3
-	systemPrompt            = `
+	AgentTypeKubernetes AgentType = `
 You are an expert Kubernetes (K8s) debugging assistant. Your purpose is to help users troubleshoot and resolve issues in their Kubernetes clusters by gathering relevant information and providing step-by-step guidance. Adhere to the following guidelines:
 
 1. Always output your responses in this exact JSON format:
@@ -38,51 +32,3 @@ You are an expert Kubernetes (K8s) debugging assistant. Your purpose is to help 
 Ensure all information is contained within the specified JSON fields. Gather all necessary data before providing a final answer. Your goal is to efficiently identify and resolve the user's Kubernetes issue through a methodical, step-by-step approach.
 `
 )
-
-// Agent represents the Kubernetes debugging assistant.
-type Agent struct {
-	AgentModel *llm.Model
-}
-
-// New creates a new Agent with the given options.
-func New(agent *llm.Model) (*Agent, error) {
-	if agent == nil {
-		return nil, fmt.Errorf("agent model is required")
-	}
-
-	agent.SetSystemPrompt(systemPrompt)
-
-	return &Agent{
-		AgentModel: agent,
-	}, nil
-}
-
-// Iterate sends a prompt to the AI model and returns the response.
-func (ag *Agent) Iterate(ctx context.Context, prompt string) (types.AgentResponse, error) {
-	if prompt == "" {
-		return types.AgentResponse{}, fmt.Errorf("prompt is required")
-	}
-
-	var modelResp types.AgentResponse
-	err := ag.AgentModel.GuidedAsk(ctx, prompt, modelCorrectionAttempts, &modelResp)
-	if err != nil {
-		return types.AgentResponse{}, err
-	}
-
-	return modelResp, nil
-}
-
-// Reset clears the agent's history and resets the conversation.
-func (ag *Agent) Reset() {
-	ag.AgentModel.History = []llm.Message{
-		{
-			Role:    llm.SystemRole,
-			Content: systemPrompt,
-		},
-	}
-}
-
-// LogUsage returns the agent's model usage log.
-func (ag *Agent) LogUsage() string {
-	return ag.AgentModel.LogUsage()
-}

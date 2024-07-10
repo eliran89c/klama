@@ -9,7 +9,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/eliran89c/klama/internal/app/types"
+	"github.com/eliran89c/klama/internal/agent"
+	"github.com/eliran89c/klama/internal/executer"
 )
 
 // Color constants for better maintainability
@@ -28,11 +29,23 @@ type (
 	tickMsg time.Time
 )
 
+// Agent represents the agent interface
+type Agent interface {
+	Iterate(context.Context, string) (agent.AgentResponse, error)
+	Reset()
+	LogUsage() string
+}
+
+// Executer represents the executer interface
+type Executer interface {
+	Run(context.Context, string) executer.ExecuterResponse
+}
+
 // Model represents the application state.
 type Model struct {
 	// Dependencies
-	agent    types.Agent
-	executer types.Executer
+	agent    Agent
+	executer Executer
 
 	// UI Components
 	viewport          viewport.Model
@@ -70,8 +83,8 @@ type Model struct {
 
 // Config holds the configuration for initializing the Model
 type Config struct {
-	Agent    types.Agent
-	Executer types.Executer
+	Agent    Agent
+	Executer Executer
 	Debug    bool
 }
 

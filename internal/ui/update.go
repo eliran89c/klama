@@ -8,7 +8,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/eliran89c/klama/internal/app/types"
+	"github.com/eliran89c/klama/internal/agent"
+	"github.com/eliran89c/klama/internal/executer"
 )
 
 // Update handles all the application logic and state transitions.
@@ -36,9 +37,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleKeyMsg(msg)
 	case tickMsg:
 		return m.handleTickMsg()
-	case types.AgentResponse:
+	case agent.AgentResponse:
 		return m.handleResponseMsg(msg)
-	case types.ExecuterResponse:
+	case executer.ExecuterResponse:
 		return m.handleExecutionResponse(msg)
 	case errMsg:
 		m.err = msg
@@ -136,7 +137,7 @@ func (m Model) handleTickMsg() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) handleResponseMsg(msg types.AgentResponse) (tea.Model, tea.Cmd) {
+func (m Model) handleResponseMsg(msg agent.AgentResponse) (tea.Model, tea.Cmd) {
 	m.typing = false
 
 	if msg.RunCommand != "" {
@@ -166,7 +167,7 @@ func (m Model) handleResponseMsg(msg types.AgentResponse) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) handleExecutionResponse(msg types.ExecuterResponse) (tea.Model, tea.Cmd) {
+func (m Model) handleExecutionResponse(msg executer.ExecuterResponse) (tea.Model, tea.Cmd) {
 	m.executing = false
 	var systemResponse string
 

@@ -3,8 +3,6 @@ package cmd
 import (
 	"os"
 
-	"github.com/eliran89c/klama/internal/app"
-	"github.com/eliran89c/klama/internal/app/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -19,18 +17,6 @@ using AI-powered assistance. It interacts with multiple language models to inter
 user queries, validate and execute commands, and provide insights 
 based on the results.`,
 	}
-
-	k8sCmd = &cobra.Command{
-		Use:   "k8s",
-		Short: "Interact with the Kubernetes debugging assistant",
-		Long: `Interact with the Kubernetes debugging assistant to troubleshoot and resolve issues in
-Kubernetes clusters.`,
-		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			debug := viper.GetBool("debug")
-			return app.Run(debug, types.AgentTypeKubernetes, types.ExecuterTypeTerminal)
-		},
-	}
 )
 
 func Execute() error {
@@ -40,8 +26,10 @@ func Execute() error {
 func init() {
 	cobra.OnInitialize(initConfig)
 
+	// Add subcommands
 	rootCmd.AddCommand(k8sCmd)
 
+	// add global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.klama.yaml)")
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug mode")
 

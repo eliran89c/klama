@@ -1,4 +1,4 @@
-package kagent
+package agent
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eliran89c/klama/internal/app/types"
 	"github.com/eliran89c/klama/internal/llm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,13 +16,13 @@ import (
 func TestNew(t *testing.T) {
 	model := &llm.Model{}
 
-	ag, err := New(model)
+	ag, err := New(model, AgentTypeKubernetes)
 	assert.NoError(t, err)
 	assert.NotNil(t, ag)
 	assert.Equal(t, model, ag.AgentModel)
 
 	// Test with nil model
-	ag, err = New(nil)
+	ag, err = New(nil, AgentTypeKubernetes)
 	assert.Error(t, err)
 	assert.Nil(t, ag)
 }
@@ -32,19 +31,19 @@ func TestAgent_Iterate(t *testing.T) {
 	testCases := []struct {
 		name          string
 		mockResponses []string
-		wantResp      types.AgentResponse
+		wantResp      AgentResponse
 		wantErr       bool
 	}{
 		{
 			name:          "successful interaction",
 			mockResponses: []string{`{"answer": "Test answer", "command_to_run": ""}`},
-			wantResp:      types.AgentResponse{Answer: "Test answer", RunCommand: ""},
+			wantResp:      AgentResponse{Answer: "Test answer", RunCommand: ""},
 			wantErr:       false,
 		},
 		{
 			name:          "invalid JSON response",
 			mockResponses: []string{`invalid JSON`, `{"answer": "Corrected answer", "command_to_run": ""}`},
-			wantResp:      types.AgentResponse{Answer: "Corrected answer", RunCommand: ""},
+			wantResp:      AgentResponse{Answer: "Corrected answer", RunCommand: ""},
 			wantErr:       false,
 		},
 	}
@@ -70,7 +69,7 @@ func TestAgent_Iterate(t *testing.T) {
 				BaseURL: mockServer.URL,
 			}
 
-			ag, err := New(model)
+			ag, err := New(model, AgentTypeKubernetes)
 			require.NoError(t, err)
 
 			got, err := ag.Iterate(context.Background(), "Test prompt")
@@ -106,7 +105,7 @@ func TestAgent_StartSession_ContextCancellation(t *testing.T) {
 		BaseURL: mockServer.URL,
 	}
 
-	ag, err := New(model)
+	ag, err := New(model, AgentTypeKubernetes)
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
