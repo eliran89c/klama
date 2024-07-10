@@ -211,7 +211,7 @@ func TestRenderInputArea(t *testing.T) {
 	// Test waiting for confirmation
 	model.waitingForConfirmation = true
 	result = model.renderInputArea()
-	assert.Contains(t, result, "To approve the command, type 'yes'. To reject it, type 'no'.")
+	assert.Contains(t, result, "'yes' to approve, 'no' to reject, 'ask' to break out and ask a question")
 
 	// Test typing state
 	model.waitingForConfirmation = false
