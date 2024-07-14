@@ -35,6 +35,8 @@ const (
 	colorHelp       = "241" // light gray
 	colorPrice      = "6"   // cyan
 	colorBackground = "0"   // black
+
+	welcomeMsg = "Welcome to Klama!\nEnter your question or issue."
 )
 
 var (
@@ -114,6 +116,7 @@ func InitialModel(cfg Config) Model {
 	ta.FocusedStyle.CursorLine = lipgloss.NewStyle()
 
 	vp := viewport.New(80, 20)
+	vp.SetContent(welcomeMsg)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -205,14 +208,7 @@ func (m *Model) updateChat(style lipgloss.Style, prefix, message string) {
 }
 
 func (m *Model) updateViewportContent() {
-	var content string
-
-	if !m.ready {
-		content = "Welcome to Klama!\nEnter your question or issue."
-	} else {
-		content = lipgloss.NewStyle().Width(m.viewport.Width).Render(strings.Join(m.messages, "\n\n"))
-	}
-
+	content := lipgloss.NewStyle().Width(m.viewport.Width).Render(strings.Join(m.messages, "\n\n"))
 	m.viewport.SetContent(content)
 	m.textarea.Reset()
 	m.viewport.GotoBottom()
@@ -263,7 +259,10 @@ func (m Model) handleWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 	m.viewport.Height = msg.Height - headerHeight - footerHeight
 	m.textarea.SetWidth(msg.Width - 2)
 
-	m.updateViewportContent()
+	// update chat history if the session is on `ready` state
+	if m.ready {
+		m.updateViewportContent()
+	}
 
 	return m, nil
 }
