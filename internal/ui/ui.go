@@ -324,7 +324,7 @@ func (m Model) handleConfirmation() (tea.Model, tea.Cmd) {
 	switch userInput {
 	case "yes", "y":
 		m.state = StateExecuting
-		m.updateChat(m.systemStyle, "System", fmt.Sprintf("Executing command `%v`", m.confirmationCmd))
+		m.updateChat(m.systemStyle, "System", fmt.Sprintf("Executing command `%v`", m.systemStyle.Render(m.confirmationCmd)))
 		return m, tea.Batch(
 			m.waitForExecution(m.confirmationCmd),
 			m.think(),
