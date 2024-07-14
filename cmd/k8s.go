@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/eliran89c/klama/config"
@@ -25,7 +24,7 @@ Kubernetes clusters.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			debug := viper.GetBool("debug")
 
-			client := &http.Client{Timeout: 45 * time.Second}
+			client := &http.Client{}
 
 			cfg, err := config.Load()
 			if err != nil {

@@ -412,6 +412,7 @@ func (m Model) handleExecuterResponse(msg executer.ExecuterResponse) (tea.Model,
 
 func (m Model) waitForAgentResponse(userMessage string) tea.Cmd {
 	return func() tea.Msg {
+		//TODO: get timeout from config
 		ctx, cancel := context.WithTimeout(m.ctx, 90*time.Second)
 		defer cancel()
 
