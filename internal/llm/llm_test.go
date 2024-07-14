@@ -97,7 +97,6 @@ func TestUpdateUsage(t *testing.T) {
 }
 
 func TestModel_GuidedAsk(t *testing.T) {
-	// Define a test structure
 	type TestResponse struct {
 		Message string `json:"message"`
 		Number  int    `json:"number"`
@@ -154,21 +153,17 @@ func TestModel_GuidedAsk(t *testing.T) {
 			}))
 			defer server.Close()
 
-			// Create a model with the mock server
 			model := &Model{
 				Client:  server.Client(),
 				BaseURL: server.URL,
 				Name:    "test-model",
 			}
 
-			// Set up the context and config
 			ctx := context.Background()
 
-			// Call GuidedAsk
 			var result TestResponse
 			err := model.GuidedAsk(ctx, "Test prompt", tt.maxAttempts, &result)
 
-			// Check the results
 			if tt.expectedError != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedError)

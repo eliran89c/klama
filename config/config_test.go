@@ -9,25 +9,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestLoad tests the Load function.
 func TestLoad(t *testing.T) {
-	// Set up test configuration
 	viper.Reset()
 	viper.SetConfigType("yaml")
 
-	// Set the configuration directly in viper
 	viper.Set("agent.name", "test-agent")
 	viper.Set("agent.base_url", "http://test.com")
 	viper.Set("agent.auth_token", "test-token")
 	viper.Set("agent.pricing.input", 0.01)
 	viper.Set("agent.pricing.output", 0.02)
 
-	// Test Load function
 	cfg, err := Load()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	// Check if the configuration is loaded correctly
 	assert.Equal(t, "test-agent", cfg.Agent.Name)
 	assert.Equal(t, "http://test.com", cfg.Agent.BaseURL)
 	assert.Equal(t, "test-token", cfg.Agent.AuthToken)
@@ -35,7 +30,6 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, 0.02, cfg.Agent.Pricing.Output)
 }
 
-// TestValidateConfig tests the validateConfig function.
 func TestValidateConfig(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -84,9 +78,7 @@ func TestValidateConfig(t *testing.T) {
 	}
 }
 
-// TestLoadWithEnvironmentVariables tests loading configuration with environment variables.
 func TestLoadWithEnvironmentVariables(t *testing.T) {
-	// Set environment variables
 	os.Setenv("KLAMA_AGENT_TOKEN", "env-agent-token")
 	os.Setenv("KLAMA_VALIDATION_TOKEN", "env-validation-token")
 	defer func() {
@@ -94,7 +86,6 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 		os.Unsetenv("KLAMA_VALIDATION_TOKEN")
 	}()
 
-	// Set up test configuration
 	viper.Reset()
 	viper.SetConfigType("yaml")
 
@@ -103,11 +94,9 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 	viper.Set("validation.name", "test-validation")
 	viper.Set("validation.base_url", "http://validation.com")
 
-	// Test Load function
 	cfg, err := Load()
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	// Check if environment variables override configuration
 	assert.Equal(t, "env-agent-token", cfg.Agent.AuthToken)
 }
