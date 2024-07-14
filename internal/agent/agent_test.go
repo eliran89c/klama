@@ -21,7 +21,6 @@ func TestNew(t *testing.T) {
 	assert.NotNil(t, ag)
 	assert.Equal(t, model, ag.AgentModel)
 
-	// Test with nil model
 	ag, err = New(nil, AgentTypeKubernetes)
 	assert.Error(t, err)
 	assert.Nil(t, ag)

@@ -2,9 +2,6 @@ package ui
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -15,13 +12,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockAgent is a mock implementation of the Agent interface
 type MockAgent struct {
 	mock.Mock
 }
 
-func (m *MockAgent) Iterate(ctx context.Context, prompt string) (agent.AgentResponse, error) {
-	args := m.Called(ctx, prompt)
+func (m *MockAgent) Iterate(ctx context.Context, input string) (agent.AgentResponse, error) {
+	args := m.Called(ctx, input)
 	return args.Get(0).(agent.AgentResponse), args.Error(1)
 }
 
@@ -34,7 +30,6 @@ func (m *MockAgent) LogUsage() string {
 	return args.String(0)
 }
 
-// MockExecuter is a mock implementation of the Executer interface
 type MockExecuter struct {
 	mock.Mock
 }
@@ -48,26 +43,19 @@ func TestInitialModel(t *testing.T) {
 	mockAgent := new(MockAgent)
 	mockExecuter := new(MockExecuter)
 
-	mockAgent.On("LogUsage").Return("Test usage")
-
-	cfg := Config{
+	model := InitialModel(Config{
 		Agent:    mockAgent,
 		Executer: mockExecuter,
-		Debug:    false,
-	}
-	model := InitialModel(cfg)
+		Debug:    true,
+	})
 
 	assert.NotNil(t, model)
-	assert.Equal(t, mockAgent, model.agent)
-	assert.Equal(t, mockExecuter, model.executer)
-	assert.False(t, model.debug)
-	assert.NotNil(t, model.textarea)
-	assert.NotNil(t, model.viewport)
-	assert.NotNil(t, model.confirmationInput)
+	assert.Equal(t, StateTyping, model.state)
+	assert.True(t, model.debug)
 }
 
 func TestModel_Init(t *testing.T) {
-	model := Model{}
+	model := InitialModel(Config{})
 	cmd := model.Init()
 	assert.NotNil(t, cmd)
 }
@@ -76,200 +64,272 @@ func TestModel_Update(t *testing.T) {
 	mockAgent := new(MockAgent)
 	mockExecuter := new(MockExecuter)
 
-	mockAgent.On("LogUsage").Return("Test usage")
-	mockAgent.On("Iterate", mock.Anything, mock.Anything).Return(agent.AgentResponse{Answer: "Test answer"}, nil)
-
-	cfg := Config{
+	model := InitialModel(Config{
 		Agent:    mockAgent,
 		Executer: mockExecuter,
-		Debug:    false,
+	})
+
+	mockAgent.On("LogUsage").Return("Test usage")
+	mockAgent.On("Reset").Return()
+
+	tests := []struct {
+		name     string
+		msg      tea.Msg
+		expected modelState
+	}{
+		{"WindowSize", tea.WindowSizeMsg{Width: 100, Height: 50}, StateTyping},
+		{"KeyUp", tea.KeyMsg{Type: tea.KeyUp}, StateTyping},
+		{"KeyEnter", tea.KeyMsg{Type: tea.KeyEnter}, StateTyping},
+		{"Tick", tickMsg(time.Now()), StateTyping},
+		{"CtrlR", tea.KeyMsg{Type: tea.KeyCtrlR}, StateTyping},
 	}
 
-	model := InitialModel(cfg)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newModel, _ := model.Update(tt.msg)
+			assert.Equal(t, tt.expected, newModel.(Model).state)
+		})
+	}
 
-	// Test window size message
-	newModel, cmd := model.Update(tea.WindowSizeMsg{Width: 100, Height: 50})
-	updatedModel := newModel.(Model)
-	assert.Equal(t, 100, updatedModel.windowWidth)
-	assert.Equal(t, 50, updatedModel.windowHeight)
-	assert.Nil(t, cmd) // Changed to Nil as it seems no command is returned for window size updates
-
-	// Test key message (Ctrl+C)
-	newModel, cmd = model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-	assert.NotNil(t, cmd) // handleExit returns a command
-
-	// Test key message (Enter)
-	model.textarea.SetValue("Test message")
-	newModel, cmd = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	updatedModel = newModel.(Model)
-	assert.True(t, updatedModel.typing)
-	assert.NotNil(t, cmd)
-
-	// Test agent response message
-	agentResponse := agent.AgentResponse{Answer: "Test answer", RunCommand: ""}
-	newModel, cmd = model.Update(agentResponse)
-	updatedModel = newModel.(Model)
-	assert.False(t, updatedModel.typing)
-	assert.Contains(t, updatedModel.messages[len(updatedModel.messages)-1], "Test answer")
-	assert.Nil(t, cmd)
-
-	// Test error message
-	testError := errors.New("Test error")
-	newModel, cmd = model.Update(errMsg(testError))
-	updatedModel = newModel.(Model)
-	assert.Equal(t, testError, updatedModel.err)
-	assert.Nil(t, cmd)
+	mockAgent.AssertExpectations(t)
 }
 
-func TestModel_waitForResponse(t *testing.T) {
+func TestModel_View(t *testing.T) {
 	mockAgent := new(MockAgent)
 	mockExecuter := new(MockExecuter)
 
 	mockAgent.On("LogUsage").Return("Test usage")
 
-	cfg := Config{
+	model := InitialModel(Config{
 		Agent:    mockAgent,
 		Executer: mockExecuter,
-		Debug:    false,
-	}
+	})
 
-	model := InitialModel(cfg)
+	model.width = 100
+	model.height = 50
 
-	// Test successful response
-	mockAgent.On("Iterate", mock.Anything, "test message").Return(agent.AgentResponse{Answer: "Test answer"}, nil)
-	cmd := model.waitForResponse("test message")
-	msg := cmd()
-	assert.IsType(t, agent.AgentResponse{}, msg)
+	view := model.View()
 
-	// Test error response
-	testError := errors.New("Test error")
-	mockAgent.On("Iterate", mock.Anything, "error message").Return(agent.AgentResponse{}, testError)
-	cmd = model.waitForResponse("error message")
-	msg = cmd()
-	assert.Error(t, msg.(error))
-	assert.Equal(t, testError.Error(), msg.(error).Error())
+	assert.Contains(t, view, "Klama")
+	assert.Contains(t, view, "Test usage")
 
-	// Test context timeout
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
-	defer cancel()
-	model.ctx = timeoutCtx
-	mockAgent.On("Iterate", mock.Anything, "timeout message").Return(agent.AgentResponse{}, context.DeadlineExceeded)
-	cmd = model.waitForResponse("timeout message")
-	msg = cmd()
-	assert.Error(t, msg.(error))
-	assert.Equal(t, context.DeadlineExceeded.Error(), msg.(error).Error())
+	mockAgent.AssertExpectations(t)
 }
 
-func TestWrapMessage(t *testing.T) {
-	message := "Sender: This is a long message that needs to be wrapped"
-	wrapped := wrapMessage(message, 20)
-	lines := strings.Split(wrapped, "\n")
-	assert.GreaterOrEqual(t, len(lines), 4)
-	assert.Equal(t, "Sender: This is a", lines[0])
-	assert.Contains(t, wrapped, "long message")
-	assert.Contains(t, wrapped, "that needs")
-	assert.Contains(t, wrapped, "to be")
-	assert.Contains(t, wrapped, "wrapped")
-}
-
-func TestWordWrap(t *testing.T) {
-	text := "This is a long sentence that needs to be wrapped"
-	wrapped := wordWrap(text, 10)
-	assert.Equal(t, 6, len(wrapped))
-	assert.Equal(t, "This is a", wrapped[0])
-	assert.Equal(t, "long", wrapped[1])
-	assert.Equal(t, "sentence", wrapped[2])
-	assert.Equal(t, "that needs", wrapped[3])
-	assert.Equal(t, "to be", wrapped[4])
-	assert.Equal(t, "wrapped", wrapped[5])
-}
-
-func TestShowTypingAnimation(t *testing.T) {
-	model := Model{}
-	cmd := model.showWaitingAnimation()
-	assert.NotNil(t, cmd)
-}
-
-func TestRenderInputArea(t *testing.T) {
+func TestModel_handleKeyMsg(t *testing.T) {
 	mockAgent := new(MockAgent)
 	mockExecuter := new(MockExecuter)
 
-	mockAgent.On("LogUsage").Return("Test usage")
-
-	cfg := Config{
+	model := InitialModel(Config{
 		Agent:    mockAgent,
 		Executer: mockExecuter,
-		Debug:    false,
+	})
+
+	mockAgent.On("LogUsage").Return("Test usage")
+	mockAgent.On("Reset").Return()
+
+	tests := []struct {
+		name     string
+		key      tea.KeyType
+		expected modelState
+	}{
+		{"Escape", tea.KeyEsc, StateTyping},
+		{"CtrlC", tea.KeyCtrlC, StateTyping},
+		{"CtrlR", tea.KeyCtrlR, StateTyping},
+		{"Enter", tea.KeyEnter, StateTyping},
 	}
 
-	model := InitialModel(cfg)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newModel, _ := model.handleKeyMsg(tea.KeyMsg{Type: tt.key})
+			assert.Equal(t, tt.expected, newModel.(Model).state)
+		})
+	}
 
-	// Test normal state
-	result := model.renderInputArea()
-	assert.Contains(t, result, "Send a message...")
-
-	// Test waiting for confirmation
-	model.waitingForConfirmation = true
-	result = model.renderInputArea()
-	assert.Contains(t, result, "'yes' to approve, 'no' to reject, 'ask' to break out and ask a question")
-
-	// Test typing state
-	model.waitingForConfirmation = false
-	model.typing = true
-	result = model.renderInputArea()
-	assert.Contains(t, result, "Klama is typing")
+	mockAgent.AssertExpectations(t)
 }
 
-func TestRenderErrorMessage(t *testing.T) {
+func TestModel_handleEnterKey(t *testing.T) {
 	mockAgent := new(MockAgent)
 	mockExecuter := new(MockExecuter)
 
-	mockAgent.On("LogUsage").Return("Test usage")
-
-	cfg := Config{
+	model := InitialModel(Config{
 		Agent:    mockAgent,
 		Executer: mockExecuter,
-		Debug:    false,
-	}
+	})
 
-	model := InitialModel(cfg)
+	InitialModel, _ := model.handleEnterKey()
+	assert.Equal(t, StateTyping, InitialModel.(Model).state)
+	assert.NotNil(t, InitialModel.(Model).err)
 
-	model.err = fmt.Errorf("Test error")
-	result := model.renderErrorMessage()
-	assert.Contains(t, result, "Test error")
+	model.textarea.SetValue("Test input")
+	mockAgent.On("Iterate", mock.Anything, "Test input").Return(agent.AgentResponse{Answer: "Test response"}, nil)
+	mockAgent.On("LogUsage").Return("Test usage")
+	InitialModel, _ = model.handleEnterKey()
+	assert.Equal(t, StateAsking, InitialModel.(Model).state)
 }
 
-func TestRenderHelpText(t *testing.T) {
+func TestModel_handleAgentResponse(t *testing.T) {
+	model := InitialModel(Config{})
+
+	tests := []struct {
+		name     string
+		response agent.AgentResponse
+		expected modelState
+	}{
+		{"Normal response", agent.AgentResponse{Answer: "Test answer"}, StateTyping},
+		{"Command response", agent.AgentResponse{RunCommand: "test command", Reason: "Test reason"}, StateWaitingForConfirmation},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			InitialModel, _ := model.handleAgentResponse(tt.response)
+			assert.Equal(t, tt.expected, InitialModel.(Model).state)
+		})
+	}
+}
+
+func TestModel_handleExecuterResponse(t *testing.T) {
+	mockAgent := new(MockAgent)
+	model := InitialModel(Config{Agent: mockAgent, Debug: true})
+
+	mockAgent.On("Iterate", mock.Anything, mock.Anything).Return(agent.AgentResponse{Answer: "Test response"}, nil)
+	mockAgent.On("LogUsage").Return("Test usage")
+
+	tests := []struct {
+		name     string
+		response executer.ExecuterResponse
+		expected modelState
+	}{
+		{"Successful execution", executer.ExecuterResponse{Result: "Test result"}, StateAsking},
+		{"Failed execution", executer.ExecuterResponse{Error: assert.AnError}, StateAsking},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			InitialModel, _ := model.handleExecuterResponse(tt.response)
+			assert.Equal(t, tt.expected, InitialModel.(Model).state)
+		})
+	}
+}
+
+func TestModel_handleConfirmation(t *testing.T) {
 	mockAgent := new(MockAgent)
 	mockExecuter := new(MockExecuter)
 
-	mockAgent.On("LogUsage").Return("Test usage")
-
-	cfg := Config{
+	model := InitialModel(Config{
 		Agent:    mockAgent,
 		Executer: mockExecuter,
-		Debug:    false,
+	})
+	model.confirmationCmd = "test command"
+	model.state = StateWaitingForConfirmation
+
+	tests := []struct {
+		name     string
+		input    string
+		expected modelState
+	}{
+		{"Yes", "yes", StateExecuting},
+		{"No", "no", StateAsking},
+		{"Ask", "ask", StateTyping},
+		{"Invalid", "invalid", StateWaitingForConfirmation},
 	}
 
-	model := InitialModel(cfg)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model.textarea.SetValue(tt.input)
+			mockAgent.On("Iterate", mock.Anything, mock.Anything).Return(agent.AgentResponse{Answer: "Test response"}, nil).Maybe()
+			mockExecuter.On("Run", mock.Anything, mock.Anything).Return(executer.ExecuterResponse{Result: "Test result"}).Maybe()
 
-	result := model.renderHelpText()
-	assert.Contains(t, result, "Ctrl+C: exit")
-	assert.Contains(t, result, "Ctrl+R: restart")
-	assert.Contains(t, result, "↑: scroll up")
-	assert.Contains(t, result, "↓: scroll down")
+			newModel, _ := model.handleConfirmation()
+			assert.Equal(t, tt.expected, newModel.(Model).state)
+		})
+	}
+
+	mockAgent.AssertExpectations(t)
+	mockExecuter.AssertExpectations(t)
 }
 
-func TestRenderPriceText(t *testing.T) {
+func TestModel_updateChat(t *testing.T) {
+	model := InitialModel(Config{})
+	model.updateChat(model.senderStyle, "Test", "Test message")
+
+	assert.Contains(t, model.viewport.View(), "Test: Test message")
+}
+
+func TestModel_headerView(t *testing.T) {
+	mockAgent := new(MockAgent)
+	mockAgent.On("LogUsage").Return("Test usage").Maybe()
+
+	model := InitialModel(Config{Agent: mockAgent})
+	model.width = 100
+
+	header := model.headerView()
+
+	assert.Contains(t, header, "Klama")
+
+	mockAgent.AssertExpectations(t)
+}
+
+func TestModel_footerView(t *testing.T) {
 	mockAgent := new(MockAgent)
 	mockAgent.On("LogUsage").Return("Test usage")
-	cfg := Config{
-		Agent:    mockAgent,
-		Executer: new(MockExecuter),
-		Debug:    false,
+
+	model := InitialModel(Config{Agent: mockAgent})
+	model.width = 100
+
+	footer := model.footerView()
+
+	assert.Contains(t, footer, "Ctrl+C: to exit")
+	assert.Contains(t, footer, "Test usage")
+
+	mockAgent.AssertExpectations(t)
+}
+
+func TestModel_renderInputArea(t *testing.T) {
+	model := InitialModel(Config{})
+
+	tests := []struct {
+		name     string
+		state    modelState
+		expected string
+	}{
+		{"Typing", StateTyping, "Send a message..."},
+		{"Asking", StateAsking, "Klama is typing"},
+		{"Executing", StateExecuting, "Command executing"},
 	}
 
-	model := InitialModel(cfg)
-	result := model.renderPriceText()
-	assert.Contains(t, result, "Test usage")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model.state = tt.state
+			inputArea := model.renderInputArea()
+			assert.Contains(t, inputArea, tt.expected)
+		})
+	}
+}
+
+func TestModel_renderErrorMessage(t *testing.T) {
+	model := InitialModel(Config{})
+	model.err = assert.AnError
+
+	errorMsg := model.renderErrorMessage()
+	assert.Contains(t, errorMsg, assert.AnError.Error())
+}
+
+func TestModel_renderHelpText(t *testing.T) {
+	model := InitialModel(Config{})
+	helpText := model.renderHelpText()
+
+	assert.Contains(t, helpText, "Ctrl+C: to exit")
+	assert.Contains(t, helpText, "Ctrl+R: to restart")
+}
+
+func TestModel_renderPriceText(t *testing.T) {
+	mockAgent := new(MockAgent)
+	model := InitialModel(Config{Agent: mockAgent})
+
+	mockAgent.On("LogUsage").Return("Test usage")
+
+	priceText := model.renderPriceText()
+	assert.Contains(t, priceText, "Test usage")
 }

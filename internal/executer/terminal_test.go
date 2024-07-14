@@ -73,7 +73,7 @@ func TestTerminalExecuter_Run_CachedCommand(t *testing.T) {
 
 func TestTerminalExecuter_Run_ContextCancellation(t *testing.T) {
 	ux := NewTerminalExecuter()
-	command := "sleep 5" // A command that takes longer than our timeout
+	command := "sleep 5" // Simulate a long-running command
 
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()

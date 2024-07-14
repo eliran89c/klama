@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// ModelConfig holds the configuration for the agent model
 type ModelConfig struct {
 	Name      string  `mapstructure:"name"`
 	BaseURL   string  `mapstructure:"base_url"`
@@ -23,6 +24,7 @@ type Config struct {
 	Agent ModelConfig `mapstructure:"agent"`
 }
 
+// Load reads the configuration from the environment and returns a Config struct
 func Load() (*Config, error) {
 	var config Config
 

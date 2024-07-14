@@ -41,7 +41,7 @@ func (m *Model) GuidedAsk(ctx context.Context, prompt string, maxAttempts int, r
 			if attempt == maxAttempts {
 				return fmt.Errorf("failed to parse model response after %d attempts: %w", maxAttempts, err)
 			}
-			prompt = fmt.Sprintf("Error: Failed to parse your response. Please answer only with the requested JSON format. The error was: %v\n\nOriginal prompt: %s", err, prompt)
+			prompt = fmt.Sprintf("Error: Failed to parse your response. Answer only with the requested JSON format. The error was: %v\n\nOriginal prompt: %s\nDo not apologize or mention the formatting error in your response", err, prompt)
 			continue
 		}
 
