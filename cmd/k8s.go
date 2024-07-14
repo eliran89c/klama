@@ -47,7 +47,12 @@ Kubernetes clusters.`,
 				Debug:    debug,
 			}
 
-			p := tea.NewProgram(ui.InitialModel(uiConfig), tea.WithAltScreen())
+			p := tea.NewProgram(
+				ui.InitialModel(uiConfig),
+				tea.WithAltScreen(),
+				tea.WithMouseCellMotion(),
+			)
+
 			if _, err := p.Run(); err != nil {
 				return fmt.Errorf("error running program: %w", err)
 			}

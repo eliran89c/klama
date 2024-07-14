@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/textarea"
-	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -13,20 +12,27 @@ import (
 	"github.com/eliran89c/klama/internal/executer"
 )
 
-// Color constants for better maintainability
 const (
-	ColorSender     = "5"
-	ColorKlama      = "2"
-	ColorSystem     = "3"
-	ColorError      = "1"
-	ColorHelp       = "241"
-	ColorPrice      = "6"
-	ColorBackground = "0"
+	// color constants
+	colorSender     = "5"
+	colorKlama      = "2"
+	colorSystem     = "3"
+	colorError      = "1"
+	colorHelp       = "241"
+	colorPrice      = "6"
+	colorBackground = "0"
+
+	// state constants
+	stateTyping modelState = iota
+	stateAsking
+	stateExecuting
+	stateWaitingForConfirmation
 )
 
 type (
-	errMsg  error
-	tickMsg time.Time
+	errMsg     error
+	tickMsg    time.Time
+	modelState int
 )
 
 // Agent represents the agent interface
@@ -42,15 +48,14 @@ type Executer interface {
 }
 
 // Model represents the application state.
-type Model struct {
+type model struct {
 	// Dependencies
 	agent    Agent
 	executer Executer
 
 	// UI Components
-	viewport          viewport.Model
-	textarea          textarea.Model
-	confirmationInput textinput.Model
+	viewport viewport.Model
+	textarea textarea.Model
 
 	// Styles
 	senderStyle lipgloss.Style
@@ -62,19 +67,16 @@ type Model struct {
 	typingStyle lipgloss.Style
 
 	// State
-	messages               []string
-	err                    error
-	typing                 bool
-	executing              bool
-	debug                  bool
-	typingDots             int
-	executingDots          int
-	waitingForConfirmation bool
-	confirmationCmd        string
+	messages        []string
+	err             error
+	debug           bool
+	state           modelState
+	waitingDots     int
+	confirmationCmd string
 
-	// Window
-	windowWidth  int
-	windowHeight int
+	// Window size
+	width  int
+	height int
 
 	// Context
 	ctx    context.Context
@@ -89,22 +91,21 @@ type Config struct {
 }
 
 // InitialModel creates and returns a new instance of Model with default values.
-func InitialModel(cfg Config) Model {
-	textArea := textarea.New()
-	textArea.Placeholder = "Send a message..."
-	textArea.Focus()
-	textArea.Prompt = "┃ "
-	textArea.CharLimit = 280
-	textArea.ShowLineNumbers = false
-	textArea.KeyMap.InsertNewline.SetEnabled(false)
+func InitialModel(cfg Config) model {
+	ta := textarea.New()
+	ta.Placeholder = "Send a message..."
+	ta.Focus()
+	ta.Prompt = "┃ "
+	ta.CharLimit = 280
+	ta.ShowLineNumbers = false
+	ta.KeyMap.InsertNewline.SetEnabled(false)
+	ta.SetHeight(3)
 
-	viewPort := viewport.New(80, 20)
-	viewPort.SetContent(`Welcome to Klama!
-Enter your question or issue.`)
+	// Remove cursor line styling
+	ta.FocusedStyle.CursorLine = lipgloss.NewStyle()
 
-	confirmationInput := textinput.New()
-	confirmationInput.Placeholder = "'yes' to approve, 'no' to reject, 'ask' to break out and ask a question"
-	confirmationInput.CharLimit = 3
+	vp := viewport.New(80, 20) // Arbitrary starting size
+	vp.SetContent("Welcome to Klama!\nEnter your question or issue.")
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -112,29 +113,29 @@ Enter your question or issue.`)
 		return lipgloss.NewStyle().Foreground(lipgloss.Color(color))
 	}
 
-	return Model{
-		agent:             cfg.Agent,
-		executer:          cfg.Executer,
-		textarea:          textArea,
-		messages:          []string{},
-		viewport:          viewPort,
-		senderStyle:       newStyle(ColorSender),
-		klamaStyle:        newStyle(ColorKlama),
-		systemStyle:       newStyle(ColorSystem),
-		errorStyle:        newStyle(ColorError),
-		helpStyle:         newStyle(ColorHelp),
-		priceStyle:        newStyle(ColorPrice),
-		typingStyle:       newStyle(ColorHelp),
-		windowWidth:       80,
-		windowHeight:      24,
-		ctx:               ctx,
-		cancel:            cancel,
-		confirmationInput: confirmationInput,
-		debug:             cfg.Debug,
+	return model{
+		agent:    cfg.Agent,
+		executer: cfg.Executer,
+		textarea: ta,
+		viewport: vp,
+		messages: []string{},
+
+		senderStyle: newStyle(colorSender),
+		klamaStyle:  newStyle(colorKlama),
+		systemStyle: newStyle(colorSystem),
+		errorStyle:  newStyle(colorError),
+		helpStyle:   newStyle(colorHelp),
+		priceStyle:  newStyle(colorPrice),
+		typingStyle: newStyle(colorHelp),
+
+		ctx:    ctx,
+		cancel: cancel,
+		debug:  cfg.Debug,
+		state:  stateTyping,
 	}
 }
 
 // Init initializes the Model.
-func (m Model) Init() tea.Cmd {
-	return tea.Batch(textarea.Blink, textinput.Blink)
+func (m model) Init() tea.Cmd {
+	return textarea.Blink
 }

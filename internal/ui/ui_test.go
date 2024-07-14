@@ -63,11 +63,10 @@ func TestInitialModel(t *testing.T) {
 	assert.False(t, model.debug)
 	assert.NotNil(t, model.textarea)
 	assert.NotNil(t, model.viewport)
-	assert.NotNil(t, model.confirmationInput)
 }
 
 func TestModel_Init(t *testing.T) {
-	model := Model{}
+	model := model{}
 	cmd := model.Init()
 	assert.NotNil(t, cmd)
 }
@@ -85,13 +84,13 @@ func TestModel_Update(t *testing.T) {
 		Debug:    false,
 	}
 
-	model := InitialModel(cfg)
+	m := InitialModel(cfg)
 
 	// Test window size message
-	newModel, cmd := model.Update(tea.WindowSizeMsg{Width: 100, Height: 50})
-	updatedModel := newModel.(Model)
-	assert.Equal(t, 100, updatedModel.windowWidth)
-	assert.Equal(t, 50, updatedModel.windowHeight)
+	newModel, cmd := m.Update(tea.WindowSizeMsg{Width: 100, Height: 50})
+	updatedModel := newModel.(model)
+	assert.Equal(t, 100, updatedModel.width)
+	assert.Equal(t, 50, updatedModel.height)
 	assert.Nil(t, cmd) // Changed to Nil as it seems no command is returned for window size updates
 
 	// Test key message (Ctrl+C)
