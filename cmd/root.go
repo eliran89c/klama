@@ -10,7 +10,6 @@ import (
 var (
 	cfgFile string
 	rootCmd = &cobra.Command{
-		Use:   "klama [flags] \"prompt\"",
 		Short: "Klama is an AI-powered DevOps assistant.",
 		Long: `Klama is a CLI tool that helps diagnose and troubleshoot DevOps-related issues 
 using AI-powered assistance. It interacts with multiple language models to interpret 
