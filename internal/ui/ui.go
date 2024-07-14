@@ -67,6 +67,7 @@ type Executer interface {
 type Model struct {
 	agent    Agent
 	executer Executer
+	ready    bool
 
 	viewport viewport.Model
 	textarea textarea.Model
@@ -113,7 +114,6 @@ func InitialModel(cfg Config) Model {
 	ta.FocusedStyle.CursorLine = lipgloss.NewStyle()
 
 	vp := viewport.New(80, 20)
-	vp.SetContent("Welcome to Klama!\nEnter your question or issue.")
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -200,8 +200,20 @@ func (m Model) renderPriceText() string {
 
 func (m *Model) updateChat(style lipgloss.Style, prefix, message string) {
 	m.messages = append(m.messages, style.Render(prefix+": ")+message)
-	wrapped := lipgloss.NewStyle().Width(m.viewport.Width).Render(strings.Join(m.messages, "\n\n"))
-	m.viewport.SetContent(wrapped)
+	m.updateViewportContent()
+
+}
+
+func (m *Model) updateViewportContent() {
+	var content string
+
+	if !m.ready {
+		content = "Welcome to Klama!\nEnter your question or issue."
+	} else {
+		content = lipgloss.NewStyle().Width(m.viewport.Width).Render(strings.Join(m.messages, "\n\n"))
+	}
+
+	m.viewport.SetContent(content)
 	m.textarea.Reset()
 	m.viewport.GotoBottom()
 }
@@ -251,6 +263,8 @@ func (m Model) handleWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 	m.viewport.Height = msg.Height - headerHeight - footerHeight
 	m.textarea.SetWidth(msg.Width - 2)
 
+	m.updateViewportContent()
+
 	return m, nil
 }
 
@@ -297,6 +311,10 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleEnterKey() (tea.Model, tea.Cmd) {
+	if !m.ready {
+		m.ready = true
+	}
+
 	switch m.state {
 	case StateTyping:
 		query := m.textarea.Value()
