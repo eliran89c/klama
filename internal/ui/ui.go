@@ -412,7 +412,7 @@ func (m Model) handleExecuterResponse(msg executer.ExecuterResponse) (tea.Model,
 
 func (m Model) waitForAgentResponse(userMessage string) tea.Cmd {
 	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(m.ctx, 30*time.Second)
+		ctx, cancel := context.WithTimeout(m.ctx, 90*time.Second)
 		defer cancel()
 
 		response, err := m.agent.Iterate(ctx, userMessage)
