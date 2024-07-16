@@ -55,7 +55,7 @@ func (m *Model) GuidedAsk(ctx context.Context, prompt string, maxAttempts int, r
 
 // Ask sends a prompt to the model and returns the response.
 func (m *Model) Ask(ctx context.Context, prompt string, temperature float64) (*ChatResponse, error) {
-	logger.Debugf("Asking model %s: %s", m.Name, prompt)
+	logger.Debugf("Asking model %s: %s\n", m.Name, prompt)
 
 	data, err := json.Marshal(ChatRequest{
 		Model:       m.Name,
@@ -94,7 +94,7 @@ func (m *Model) Ask(ctx context.Context, prompt string, temperature float64) (*C
 		return nil, fmt.Errorf("failed to unmarshal chat response: %w", err)
 	}
 
-	logger.Debugf("Model %s responded: %s", m.Name, chatResp.Choices[0].Message.Content)
+	logger.Debugf("Model %s responded: %s\n", m.Name, chatResp.Choices[0].Message.Content)
 
 	// Update the model's state with the response
 	m.addMessage(UserRole, prompt)
