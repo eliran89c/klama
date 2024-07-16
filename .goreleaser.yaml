@@ -37,11 +37,49 @@ archives:
 changelog:
   sort: asc
   filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
+    include:
+      - "^feat:"
 
 release:
   github:
     owner: eliran89c
     name: klama
+
+brews:
+  -
+    # Name of the recipe
+    name: klama
+
+    # GitHub repository to push the formula to
+    repository:
+      owner: eliran89c
+      name: homebrew-tap
+      token: "{{ .Env.PERSONAL_ACCESS_TOKEN }}"
+
+    # Git author used to commit to the repository.
+    commit_author:
+      name: Eliran Cohen
+      email: eliran89c@gmail.com
+
+    # Folder inside the repository to put the formula.
+    directory: Formula
+
+    # Your app's homepage.
+    homepage: "https://github.com/eliran89c/klama"
+
+    # app description.
+    description: "AI-powered CLI assistant for troubleshooting DevOps-related issues."
+
+    # Setting this will prevent goreleaser to actually try to commit the updated
+    # formula - instead, the formula file will be stored on the dist folder only,
+    # leaving the responsibility of publishing it to the user.
+    # Default is false.
+    skip_upload: false
+
+    # So you can `brew test` your formula.
+    test: |
+      system "#{bin}/klama version"
+    # Custom install script for brew.
+    # Default is 'bin.install "program"'.
+    install: |
+      bin.install "klama"
