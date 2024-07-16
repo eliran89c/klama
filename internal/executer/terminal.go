@@ -35,7 +35,7 @@ type TerminalExecuterType struct {
 var (
 	// KubernetesExecuterType represents the type of the terminal executer for kubectl commands.
 	KubernetesExecuterType = TerminalExecuterType{
-		AllowedCommands: []string{"kubectli"},
+		AllowedCommands: []string{"kubectl"},
 		AllowedSubCommands: []string{
 			"get",
 			"describe",
