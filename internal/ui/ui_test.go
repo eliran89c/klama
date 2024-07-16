@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -39,6 +40,12 @@ func (m *MockExecuter) Run(ctx context.Context, command string) executer.Execute
 	return args.Get(0).(executer.ExecuterResponse)
 }
 
+func (m *MockExecuter) Validate(command string) error {
+	args := m.Called(command)
+	return args.Error(0)
+
+}
+
 func TestInitialModel(t *testing.T) {
 	mockAgent := new(MockAgent)
 	mockExecuter := new(MockExecuter)
@@ -46,12 +53,10 @@ func TestInitialModel(t *testing.T) {
 	model := InitialModel(Config{
 		Agent:    mockAgent,
 		Executer: mockExecuter,
-		Debug:    true,
 	})
 
 	assert.NotNil(t, model)
 	assert.Equal(t, StateTyping, model.state)
-	assert.True(t, model.debug)
 }
 
 func TestModel_Init(t *testing.T) {
@@ -170,7 +175,11 @@ func TestModel_handleEnterKey(t *testing.T) {
 }
 
 func TestModel_handleAgentResponse(t *testing.T) {
-	model := InitialModel(Config{})
+	mockExecuter := new(MockExecuter)
+	model := InitialModel(Config{Executer: mockExecuter})
+
+	mockExecuter.On("Validate", "allowed").Return(nil)
+	mockExecuter.On("Validate", "not-allowed").Return(fmt.Errorf("not allowed"))
 
 	tests := []struct {
 		name     string
@@ -178,7 +187,8 @@ func TestModel_handleAgentResponse(t *testing.T) {
 		expected modelState
 	}{
 		{"Normal response", agent.AgentResponse{Answer: "Test answer"}, StateTyping},
-		{"Command response", agent.AgentResponse{RunCommand: "test command", Reason: "Test reason"}, StateWaitingForConfirmation},
+		{"Command response", agent.AgentResponse{RunCommand: "allowed", Reason: "Test reason"}, StateWaitingForConfirmation},
+		{"Command response", agent.AgentResponse{RunCommand: "not-allowed", Reason: "Test reason"}, StateAsking},
 	}
 
 	for _, tt := range tests {
@@ -191,7 +201,7 @@ func TestModel_handleAgentResponse(t *testing.T) {
 
 func TestModel_handleExecuterResponse(t *testing.T) {
 	mockAgent := new(MockAgent)
-	model := InitialModel(Config{Agent: mockAgent, Debug: true})
+	model := InitialModel(Config{Agent: mockAgent})
 
 	mockAgent.On("Iterate", mock.Anything, mock.Anything).Return(agent.AgentResponse{Answer: "Test response"}, nil)
 	mockAgent.On("LogUsage").Return("Test usage")

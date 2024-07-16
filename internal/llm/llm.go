@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+
+	"github.com/eliran89c/klama/internal/logger"
 )
 
 // SetSystemPrompt sets or updates the system prompt in the model's history.
@@ -53,6 +55,8 @@ func (m *Model) GuidedAsk(ctx context.Context, prompt string, maxAttempts int, r
 
 // Ask sends a prompt to the model and returns the response.
 func (m *Model) Ask(ctx context.Context, prompt string, temperature float64) (*ChatResponse, error) {
+	logger.Debugf("Asking model %s: %s\n", m.Name, prompt)
+
 	data, err := json.Marshal(ChatRequest{
 		Model:       m.Name,
 		Temperature: temperature,
@@ -89,6 +93,8 @@ func (m *Model) Ask(ctx context.Context, prompt string, temperature float64) (*C
 	if err := json.Unmarshal(body, &chatResp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal chat response: %w", err)
 	}
+
+	logger.Debugf("Model %s responded: %s\n", m.Name, chatResp.Choices[0].Message.Content)
 
 	// Update the model's state with the response
 	m.addMessage(UserRole, prompt)
