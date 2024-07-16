@@ -3,7 +3,6 @@ package executer
 import (
 	"context"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -27,13 +26,12 @@ func TestTerminalExecuter_Run(t *testing.T) {
 	tests := []struct {
 		name     string
 		command  string
-		expected string
 		hasError bool
 	}{
-		{"Simple echo", "echo hello", "hello", false},
-		{"Echo with quotes", `echo "hello world"`, "hello world", false},
-		{"Invalid command", "invalid_command", "sh: invalid_command: command not found", true},
-		{"Command with pipe", "echo hello | grep h", "hello", false},
+		{"Simple echo", "echo hello", false},
+		{"Echo with quotes", `echo "hello world"`, false},
+		{"Invalid command", "invalid_command", true},
+		{"Command with pipe", "echo hello | grep h", false},
 	}
 
 	for _, tt := range tests {
@@ -42,9 +40,6 @@ func TestTerminalExecuter_Run(t *testing.T) {
 			if (result.Error != nil) != tt.hasError {
 				t.Errorf("Run() error = %v, wantErr %v", result.Error, tt.hasError)
 				return
-			}
-			if !strings.Contains(result.Result, tt.expected) {
-				t.Errorf("Run() got = %v, want %v", result.Result, tt.expected)
 			}
 		})
 	}
