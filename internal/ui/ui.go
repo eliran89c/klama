@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/eliran89c/klama/internal/agent"
 	"github.com/eliran89c/klama/internal/executer"
+	"github.com/eliran89c/klama/internal/logger"
 )
 
 type (
@@ -63,6 +64,7 @@ type Agent interface {
 // Executer represents the interface for executing commands.
 type Executer interface {
 	Run(context.Context, string) executer.ExecuterResponse
+	Validate(string) error
 }
 
 // Model represents the application state.
@@ -84,10 +86,10 @@ type Model struct {
 
 	messages        []string
 	err             error
-	debug           bool
 	state           modelState
 	waitingDots     int
 	confirmationCmd string
+	showCmdResponse bool
 
 	width  int
 	height int
@@ -100,11 +102,12 @@ type Model struct {
 type Config struct {
 	Agent    Agent
 	Executer Executer
-	Debug    bool
 }
 
 // InitialModel creates and returns a new instance of Model with default values.
 func InitialModel(cfg Config) Model {
+	logger.Debug("Initializing UI model")
+
 	ta := textarea.New()
 	ta.Placeholder = "Send a message..."
 	ta.Focus()
@@ -139,7 +142,6 @@ func InitialModel(cfg Config) Model {
 		typingStyle: newStyle(colorHelp),
 		ctx:         ctx,
 		cancel:      cancel,
-		debug:       cfg.Debug,
 		state:       StateTyping,
 	}
 }
@@ -193,7 +195,15 @@ func (m Model) renderErrorMessage() string {
 }
 
 func (m Model) renderHelpText() string {
-	helpText := "Ctrl+C: to exit, Ctrl+R: to restart. Scroll with ↑, ↓, Page Up, Page Down, and mouse wheel."
+	var helpText string
+	if m.showCmdResponse {
+		helpText += "Ctrl+S: to hide command response."
+	} else {
+		helpText += "Ctrl+S: to show command response."
+	}
+
+	helpText += "\nCtrl+C: to exit, Ctrl+R: to restart. Scroll with ↑, ↓, Page Up, Page Down, and mouse wheel."
+
 	return m.helpStyle.Width(m.width).Render(helpText)
 }
 
@@ -249,6 +259,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleWindowSizeMsg(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+	logger.Debugf("Window size message received: %v\n", msg)
+
 	m.width = msg.Width
 	m.height = msg.Height
 
@@ -285,14 +297,19 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case tea.KeyCtrlR:
+		logger.Debug("Restarting the session")
 		m.cancel()
 		m.agent.Reset()
 		newModel := InitialModel(Config{
 			Agent:    m.agent,
 			Executer: m.executer,
-			Debug:    m.debug,
 		})
 		return newModel.Update(tea.WindowSizeMsg{Width: m.width, Height: m.height})
+
+	case tea.KeyCtrlS:
+		logger.Debug("Toggling command response visibility")
+		m.showCmdResponse = !m.showCmdResponse
+		return m, nil
 
 	case tea.KeyEnter:
 		return m.handleEnterKey()
@@ -371,6 +388,18 @@ func (m Model) handleConfirmation() (tea.Model, tea.Cmd) {
 func (m Model) handleAgentResponse(msg agent.AgentResponse) (tea.Model, tea.Cmd) {
 	m.state = StateTyping
 	if msg.RunCommand != "" {
+		logger.Debugf("Agent suggested a command to run: `%v`\n", msg.RunCommand)
+		// validate the command
+		if err := m.executer.Validate(msg.RunCommand); err != nil {
+			logger.Debug(err)
+			// command is invalid, return to the agent
+			m.state = StateAsking
+			return m, tea.Batch(
+				m.waitForAgentResponse(err.Error()),
+				m.think(),
+			)
+		}
+
 		m.state = StateWaitingForConfirmation
 		m.confirmationCmd = msg.RunCommand
 
@@ -395,12 +424,12 @@ func (m Model) handleExecuterResponse(msg executer.ExecuterResponse) (tea.Model,
 	var systemResponse string
 
 	if msg.Error != nil {
-		systemResponse = fmt.Sprintf("Error executing command: %v\n%v", msg.Error.Error(), msg.Result)
+		systemResponse = fmt.Sprintf("Error executing command: %v\n%v\nFOLLOW YOUR GUIDELINES", msg.Error.Error(), msg.Result)
 	} else {
 		systemResponse = fmt.Sprintf("Command output:\n%v", msg.Result)
 	}
 
-	if m.debug {
+	if m.showCmdResponse {
 		m.updateChat(m.systemStyle, "System", systemResponse)
 	}
 

@@ -111,7 +111,7 @@ This will start an interactive session where you can ask Kubernetes-related ques
 ### Flags
 
 - `--config`: Specify a custom configuration file location
-- `--debug`: Enable debug mode
+- `--debug`: Enable debug mode. (Saves output to `klama.debug` file)
 
 Example with flags:
 ```sh
