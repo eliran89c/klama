@@ -1,10 +1,17 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+)
+
+// version information
+var (
+	version = "dev"
+	arch    = "dev"
 )
 
 var (
@@ -15,6 +22,13 @@ var (
 using AI-powered assistance. It interacts with multiple language models to interpret 
 user queries, validate and execute commands, and provide insights 
 based on the results.`,
+	}
+	versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Print the version number",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Klama version %v %v\n", version, arch)
+		},
 	}
 )
 
@@ -27,6 +41,7 @@ func init() {
 
 	// Add subcommands
 	rootCmd.AddCommand(k8sCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	// add global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.klama.yaml)")
