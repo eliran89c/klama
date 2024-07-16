@@ -8,6 +8,9 @@ on:
     branches: 
       - main
 
+env:
+  CGO_ENABLED: 0
+
 jobs:
   fmt_and_vet:
     runs-on: ubuntu-latest
