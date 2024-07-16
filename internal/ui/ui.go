@@ -393,9 +393,10 @@ func (m Model) handleAgentResponse(msg agent.AgentResponse) (tea.Model, tea.Cmd)
 		if err := m.executer.Validate(msg.RunCommand); err != nil {
 			logger.Debug(err)
 			// command is invalid, return to the agent
+			prompt := fmt.Sprintf("The suggested command is invalid: %v\nDo not apologize or mention the incorrect suggestion in your response", err)
 			m.state = StateAsking
 			return m, tea.Batch(
-				m.waitForAgentResponse(err.Error()),
+				m.waitForAgentResponse(prompt),
 				m.think(),
 			)
 		}
