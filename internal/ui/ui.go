@@ -304,6 +304,7 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			Agent:    m.agent,
 			Executer: m.executer,
 		})
+		newModel.showCmdResponse = m.showCmdResponse
 		return newModel.Update(tea.WindowSizeMsg{Width: m.width, Height: m.height})
 
 	case tea.KeyCtrlS:
