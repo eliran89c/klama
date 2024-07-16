@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 
@@ -32,7 +31,7 @@ Kubernetes clusters.`,
 				//TODO: get debugger file location from user
 				file, err := os.Create("klama.debug")
 				if err != nil {
-					log.Fatal("Failed to create debug file:", err)
+					return fmt.Errorf("failed to create debug file: %w", err)
 				}
 				logger.Init(file)
 				defer file.Close()
