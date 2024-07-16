@@ -2,13 +2,17 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/eliran89c/klama/config"
 	"github.com/eliran89c/klama/internal/agent"
 	"github.com/eliran89c/klama/internal/executer"
 	"github.com/eliran89c/klama/internal/llm"
+	"github.com/eliran89c/klama/internal/logger"
 	"github.com/eliran89c/klama/internal/ui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -24,6 +28,18 @@ Kubernetes clusters.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			debug := viper.GetBool("debug")
 
+			if debug {
+				//TODO: get debugger file location from user
+				file, err := os.Create("klama.debug")
+				if err != nil {
+					log.Fatal("Failed to create debug file:", err)
+				}
+				logger.Init(file)
+				defer file.Close()
+			} else {
+				logger.Init(io.Discard)
+			}
+
 			client := &http.Client{}
 
 			cfg, err := config.Load()
@@ -38,12 +54,11 @@ Kubernetes clusters.`,
 				return fmt.Errorf("failed to initialize agent: %w", err)
 			}
 
-			exec := executer.NewTerminalExecuter()
+			exec := executer.NewTerminalExecuter(executer.KubernetesExecuterType)
 
 			uiConfig := ui.Config{
 				Agent:    k8sAgent,
 				Executer: exec,
-				Debug:    debug,
 			}
 
 			p := tea.NewProgram(

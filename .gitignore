@@ -24,5 +24,6 @@ go.work.sum
 # Mac DS store file
 .DS_Store
 
-# Local klama config
+# Local klama files
 .klama.yaml
+klama.debug
