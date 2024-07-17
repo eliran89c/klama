@@ -18,13 +18,27 @@ Klama is a CLI tool that helps diagnose and troubleshoot DevOps-related issues u
 This approach ensures safety and gives users full control over the commands run in their environment.
 
 ## Requirements
-
-- Go 1.22 or higher
 - Access to a Kubernetes cluster (for K8s-related command execution)
 
 ## Installation
 
-You can install Klama directly from GitHub:
+You have several options to install Klama:
+
+### Option 1: macOS (Using Homebrew)
+
+If you're on macOS, you can use Homebrew to install Klama:
+
+```
+brew install eliran89c/tap/klama
+```
+
+### Option 2: Pre-built Binaries (Linux and Windows)
+
+You can download pre-built binaries for Linux and Windows from the [releases page](https://github.com/eliran89c/klama/releases) on GitHub. Choose the appropriate binary for your operating system and architecture.
+
+### Option 3: Using Go
+
+You can install Klama directly from GitHub using Go:
 
 ```
 go install github.com/eliran89c/klama@latest
