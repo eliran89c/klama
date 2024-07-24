@@ -19,7 +19,7 @@ func TestLoad(t *testing.T) {
 	viper.Set("agent.pricing.input", 0.01)
 	viper.Set("agent.pricing.output", 0.02)
 
-	cfg, err := Load()
+	cfg, err := Load("")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -94,7 +94,7 @@ func TestLoadWithEnvironmentVariables(t *testing.T) {
 	viper.Set("validation.name", "test-validation")
 	viper.Set("validation.base_url", "http://validation.com")
 
-	cfg, err := Load()
+	cfg, err := Load("")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
