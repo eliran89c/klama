@@ -19,9 +19,9 @@ var (
 	rootCmd = &cobra.Command{
 		Short: "Klama is an AI-powered DevOps assistant.",
 		Long: `Klama is a CLI tool that helps diagnose and troubleshoot DevOps-related issues 
-	using AI-powered assistance. It interacts with multiple language models to interpret 
-	user queries, validate and execute commands, and provide insights 
-	based on the results.`,
+using AI-powered assistance. It interacts with multiple language models to interpret 
+user queries, validate and execute commands, and provide insights 
+based on the results.`,
 	}
 
 	versionCmd = &cobra.Command{
