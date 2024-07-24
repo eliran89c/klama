@@ -51,10 +51,10 @@ This will download the source code, compile it, and install the `klama` binary i
 Klama requires a YAML configuration file to set up the AI model. The configuration file is searched for in the following order:
 
 1. Custom location specified by the `--config` flag
-2. `$HOME/.klama.yaml`
-3. `.klama.yaml` in the current directory
+2. `$XDG_CONFIG_HOME/klama/config.yaml` (usually `~/.config/klama/config.yaml`)
+3. `$HOME/.klama.yaml`
 
-A valid configuration file with at least the required fields must be present for Klama to function properly.
+If no configuration file is found, a default configuration will be created at `$XDG_CONFIG_HOME/klama/config.yaml`.
 
 ### Required Configuration
 

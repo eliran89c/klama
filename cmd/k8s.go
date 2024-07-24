@@ -23,7 +23,8 @@ var (
 		Short: "Interact with the Kubernetes debugging assistant",
 		Long: `Interact with the Kubernetes debugging assistant to troubleshoot and resolve issues in
 Kubernetes clusters.`,
-		Args: cobra.NoArgs,
+		Args:         cobra.NoArgs,
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			debug := viper.GetBool("debug")
 
@@ -39,12 +40,12 @@ Kubernetes clusters.`,
 				logger.Init(io.Discard)
 			}
 
-			client := &http.Client{}
-
-			cfg, err := config.Load()
+			cfg, err := config.Load(cfgFile)
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)
 			}
+
+			client := &http.Client{}
 
 			llmModel := llm.NewModel(client, cfg.Agent)
 
