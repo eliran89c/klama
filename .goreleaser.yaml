@@ -39,6 +39,10 @@ changelog:
   filters:
     include:
       - "^feat:"
+      - "^fix:"
+      - "^chore:"
+      - "^BREAKING CHANGE:"
+
 
 release:
   github:
