@@ -86,7 +86,24 @@ func (m *Model) Ask(ctx context.Context, prompt string, temperature float64) (*C
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d\n%s", resp.StatusCode, string(body))
+		var errMsg string
+		switch resp.StatusCode {
+		case http.StatusTooManyRequests:
+			errMsg = "rate limit exceeded"
+		case http.StatusUnauthorized:
+			errMsg = "unauthorized, please check your API key"
+		case http.StatusNotFound:
+			errMsg = "model not found"
+		case http.StatusInternalServerError:
+			errMsg = "internal server error"
+		case http.StatusBadRequest:
+			errMsg = "bad request"
+		default:
+			errMsg = fmt.Sprintf("unexpected status code %d", resp.StatusCode)
+		}
+
+		logger.Debugf("Model %s responded with status code %d: %s\n", m.Name, resp.StatusCode, body)
+		return nil, fmt.Errorf("%s (status code: %d)", errMsg, resp.StatusCode)
 	}
 
 	var chatResp ChatResponse
