@@ -72,6 +72,7 @@ Klama requires an OpenAI or OpenAI-compatible server to function. The applicatio
 - OpenAI models
 - Self-hosted models using [vLLM](https://medium.com/@eliran89c/how-to-deploy-a-self-hosted-llm-on-eks-and-why-you-should-e9184e366e0a)
 - Amazon Bedrock models via [Bedrock Access Gateway](https://github.com/aws-samples/bedrock-access-gateway)
+- [Azure AI](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions)
 
 While these have been specifically tested, any server that implements the OpenAI API should be compatible with Klama.
 
@@ -84,6 +85,7 @@ agent:
   name: "anthropic.claude-3-5-sonnet-20240620-v1:0"  # Required
   base_url: "https://bedrock-gateway.example.com/api/v1"  # Required
   auth_token: ""  # Set via KLAMA_AGENT_TOKEN environment variable
+  azure_api_version: "" # Required only when working with Azure AI
   pricing: # Optional, will be used to calculate session price
     input: 0.003  # Price per 1K input tokens (optional)
     output: 0.015 # Price per 1K output tokens (optional)

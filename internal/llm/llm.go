@@ -66,13 +66,13 @@ func (m *Model) Ask(ctx context.Context, prompt string, temperature float64) (*C
 		return nil, fmt.Errorf("failed to marshal chat request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, m.BaseURL+"/chat/completions", bytes.NewBuffer(data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, m.URL, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+m.AuthToken)
+	req.Header.Set(m.AuthToken.Key, m.AuthToken.Value)
 
 	resp, err := m.Client.Do(req)
 	if err != nil {
