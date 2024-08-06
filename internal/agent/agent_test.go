@@ -66,6 +66,10 @@ func TestAgent_Iterate(t *testing.T) {
 			model := &llm.Model{
 				Client:  mockServer.Client(),
 				BaseURL: mockServer.URL,
+				AuthToken: llm.AuthToken{
+					Key:   "test-header",
+					Value: "test-token",
+				},
 			}
 
 			ag, err := New(model, AgentTypeKubernetes)
@@ -102,6 +106,10 @@ func TestAgent_StartSession_ContextCancellation(t *testing.T) {
 	model := &llm.Model{
 		Client:  mockServer.Client(),
 		BaseURL: mockServer.URL,
+		AuthToken: llm.AuthToken{
+			Key:   "test-header",
+			Value: "test-token",
+		},
 	}
 
 	ag, err := New(model, AgentTypeKubernetes)

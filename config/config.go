@@ -11,10 +11,11 @@ import (
 
 // ModelConfig holds the configuration for the agent model
 type ModelConfig struct {
-	Name      string  `mapstructure:"name" yaml:"name"`
-	BaseURL   string  `mapstructure:"base_url" yaml:"base_url"`
-	AuthToken string  `mapstructure:"auth_token" yaml:"auth_token"`
-	Pricing   Pricing `mapstructure:"pricing" yaml:"pricing"`
+	Name            string  `mapstructure:"name" yaml:"name"`
+	BaseURL         string  `mapstructure:"base_url" yaml:"base_url"`
+	AuthToken       string  `mapstructure:"auth_token" yaml:"auth_token"`
+	Pricing         Pricing `mapstructure:"pricing" yaml:"pricing"`
+	AzureAPIVersion string  `mapstructure:"azure_api_version" yaml:"azure_api_version"`
 }
 
 type Pricing struct {
