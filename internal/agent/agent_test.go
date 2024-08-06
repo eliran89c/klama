@@ -64,8 +64,8 @@ func TestAgent_Iterate(t *testing.T) {
 			defer mockServer.Close()
 
 			model := &llm.Model{
-				Client:  mockServer.Client(),
-				BaseURL: mockServer.URL,
+				Client: mockServer.Client(),
+				URL:    mockServer.URL,
 				AuthToken: llm.AuthToken{
 					Key:   "test-header",
 					Value: "test-token",
@@ -104,8 +104,8 @@ func TestAgent_StartSession_ContextCancellation(t *testing.T) {
 	defer mockServer.Close()
 
 	model := &llm.Model{
-		Client:  mockServer.Client(),
-		BaseURL: mockServer.URL,
+		Client: mockServer.Client(),
+		URL:    mockServer.URL,
 		AuthToken: llm.AuthToken{
 			Key:   "test-header",
 			Value: "test-token",

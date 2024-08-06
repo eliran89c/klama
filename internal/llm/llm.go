@@ -66,7 +66,7 @@ func (m *Model) Ask(ctx context.Context, prompt string, temperature float64) (*C
 		return nil, fmt.Errorf("failed to marshal chat request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, m.BaseURL, bytes.NewBuffer(data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, m.URL, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

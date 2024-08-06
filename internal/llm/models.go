@@ -11,7 +11,7 @@ import (
 type Model struct {
 	Client      *http.Client
 	Name        string
-	BaseURL     string
+	URL         string
 	AuthToken   AuthToken
 	InputPrice  float64 // price per 1K input tokens
 	OutputPrice float64 // price per 1K output tokens
@@ -33,13 +33,13 @@ func NewModel(client *http.Client, modelConfig config.ModelConfig) *Model {
 	}
 
 	// build the baseURL
-	baseURL := modelConfig.BaseURL + "/chat/completions"
+	modelURL := modelConfig.BaseURL + "/chat/completions"
 
 	// add the Azure API version as query parameter if set
 	if modelConfig.AzureAPIVersion != "" {
 		params := url.Values{}
 		params.Add("api-version", modelConfig.AzureAPIVersion)
-		baseURL += "?" + params.Encode()
+		modelURL += "?" + params.Encode()
 
 		// update the auth token key for azure models
 		auth.Key = "api-key"
@@ -49,7 +49,7 @@ func NewModel(client *http.Client, modelConfig config.ModelConfig) *Model {
 	return &Model{
 		Client:      client,
 		Name:        modelConfig.Name,
-		BaseURL:     baseURL,
+		URL:         modelURL,
 		AuthToken:   auth,
 		InputPrice:  modelConfig.Pricing.Input,
 		OutputPrice: modelConfig.Pricing.Output,

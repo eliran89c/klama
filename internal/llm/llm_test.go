@@ -32,9 +32,9 @@ func TestAsk(t *testing.T) {
 	defer server.Close()
 
 	model := &Model{
-		Client:  server.Client(),
-		BaseURL: server.URL,
-		Name:    "test-model",
+		Client: server.Client(),
+		URL:    server.URL,
+		Name:   "test-model",
 		AuthToken: AuthToken{
 			Key:   "test-header",
 			Value: "test-token",
@@ -158,9 +158,9 @@ func TestModel_GuidedAsk(t *testing.T) {
 			defer server.Close()
 
 			model := &Model{
-				Client:  server.Client(),
-				BaseURL: server.URL,
-				Name:    "test-model",
+				Client: server.Client(),
+				URL:    server.URL,
+				Name:   "test-model",
 				AuthToken: AuthToken{
 					Key:   "test-header",
 					Value: "test-token",

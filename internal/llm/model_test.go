@@ -24,7 +24,7 @@ func TestNewModel(t *testing.T) {
 
 	assert.Equal(t, client, model.Client)
 	assert.Equal(t, "test-model", model.Name)
-	assert.Equal(t, "http://test.com/chat/completions", model.BaseURL)
+	assert.Equal(t, "http://test.com/chat/completions", model.URL)
 	assert.Equal(t, "Authorization", model.AuthToken.Key)
 	assert.Equal(t, "Bearer test-token", model.AuthToken.Value)
 	assert.Equal(t, 0.01, model.InputPrice)
@@ -45,7 +45,7 @@ func TestNewAzureModel(t *testing.T) {
 	model := NewModel(client, modelConfig)
 
 	assert.Equal(t, client, model.Client)
-	assert.Equal(t, "http://test.com/chat/completions?api-version="+apiVersion, model.BaseURL)
+	assert.Equal(t, "http://test.com/chat/completions?api-version="+apiVersion, model.URL)
 	assert.Equal(t, "test-token", model.AuthToken.Value)
 	assert.Equal(t, "api-key", model.AuthToken.Key)
 }
