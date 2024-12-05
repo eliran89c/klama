@@ -3,7 +3,7 @@ module github.com/eliran89c/klama
 go 1.22.4
 
 require (
-	github.com/charmbracelet/bubbletea v1.2.2
+	github.com/charmbracelet/bubbletea v1.2.4
 	gopkg.in/yaml.v3 v3.0.1
 )
 
