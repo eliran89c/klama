@@ -1,6 +1,7 @@
 module github.com/eliran89c/klama
 
 go 1.22.4
+
 require (
 	github.com/charmbracelet/bubbletea v1.2.4
 	gopkg.in/yaml.v3 v3.0.1
@@ -43,7 +44,7 @@ require (
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/spf13/cobra v1.8.1
-	github.com/spf13/viper v1.20.0
+	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/sys v0.29.0 // indirect
 )
