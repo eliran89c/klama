@@ -94,15 +94,183 @@ Tests are located alongside source files with `_test.go` suffix. Key test areas:
 
 ## Build and Release
 
-- Uses GoReleaser for cross-platform builds
-- Supports Linux, macOS, and Windows (x86_64 and ARM64)
-- Homebrew tap available for macOS users
-- Version information injected at build time via ldflags
+### Release Workflow Overview
+
+The project uses an automated release pipeline with GoReleaser and GitHub Actions:
+
+#### CI/CD Pipeline
+
+**Continuous Integration** (`.github/workflows/build-test.yaml`):
+- **Triggers**: Pull requests to `main` branch
+- **Jobs**:
+  - `fmt_and_vet`: Code formatting and vetting checks (Go 1.22, Ubuntu)
+  - `unit_tests`: Test matrix across Ubuntu and Windows with Go 1.22
+- **Environment**: `CGO_ENABLED=0` for static builds
+
+**Release Pipeline** (`.github/workflows/release.yaml`):
+- **Trigger**: Git tag push (`tags: ['*']`)
+- **Process**: Uses GoReleaser Action v6 with `goreleaser release --clean`
+- **Requirements**: `PERSONAL_ACCESS_TOKEN` secret for GitHub operations
+
+#### Version Management
+
+- Version stored in `cmd/root.go` with defaults: `version = "dev"`, `arch = "dev"`
+- Build-time injection via ldflags: `-X github.com/eliran89c/klama/cmd.version={{.Version}} -X github.com/eliran89c/klama/cmd.arch={{.Arch}}`
+
+#### Supported Platforms
+
+- **Linux**: amd64, arm64
+- **macOS (Darwin)**: amd64, arm64
+- **Windows**: amd64 (arm64 excluded)
+- **Archive formats**: tar.gz (Unix-like), zip (Windows)
+
+#### Release Artifacts
+
+Each release includes:
+- Source code archives
+- Cross-platform binaries
+- Checksums file
+- Automated Homebrew formula publication
+
+#### Distribution Channels
+
+1. **GitHub Releases**: Direct binary downloads
+2. **Homebrew**: `brew install eliran89c/tap/klama`
+3. **Go Install**: `go install github.com/eliran89c/klama@latest`
+
+#### Changelog Configuration
+
+GoReleaser automatically generates changelogs from commits with prefixes:
+- `feat:` - New features
+- `fix:` - Bug fixes
+- `chore:` - Maintenance tasks
+- `BREAKING CHANGE:` - Breaking changes
+
+#### Creating a Release
+
+```bash
+# Create and push a new tag
+git tag v0.x.x
+git push origin v0.x.x
+
+# GitHub Actions will automatically:
+# 1. Run GoReleaser
+# 2. Build cross-platform binaries
+# 3. Create GitHub release
+# 4. Update Homebrew tap
+# 5. Generate changelog
+```
+
+#### Homebrew Integration
+
+- **Repository**: `eliran89c/homebrew-tap`
+- **Formula location**: `Formula/klama.rb`
+- **Test command**: `system "#{bin}/klama version"`
+- **Automatic updates**: On each release
 
 ## Dependabot PR Merge Workflow
 
-- Before starting work on a Dependabot PR:
-  - Check for conflicts with the base branch
-  - Ensure there are no merge conflicts before proceeding
-- Wait for CI checks to complete successfully before attempting to merge
-- Verify all status checks pass before merging the PR
+When handling Dependabot PRs, follow this systematic approach for safe dependency updates:
+
+### 1. Discovery and Assessment
+```bash
+# List all open Dependabot PRs
+gh pr list --author=app/dependabot
+
+# Review each PR for necessity and safety
+gh pr view <PR_NUMBER>
+```
+
+### 2. Pre-merge Checks
+Before starting work on any Dependabot PR:
+- Check for merge conflicts with the base branch
+- Ensure all CI checks are passing
+- Verify the PR branch is up-to-date with main
+
+### 3. Changelog Review and Impact Analysis
+For each dependency update, review the changelog to understand potential impacts:
+
+```bash
+# First, check the Dependabot PR body for changelog information
+gh pr view <PR_NUMBER>
+# Dependabot usually includes changelog/release notes in the PR description
+
+# If changelog not in PR body, check the dependency's repository:
+# For GitHub-hosted dependencies:
+# Visit: https://github.com/owner/repo/releases
+# Or: https://github.com/owner/repo/blob/main/CHANGELOG.md
+
+# Look for:
+# - Breaking changes that might affect our code
+# - New features we could utilize
+# - Bug fixes that might impact our functionality
+# - Security patches
+# - Deprecation warnings
+```
+
+**If breaking changes or significant updates are found:**
+- Document the required code changes
+- Assess the impact on our codebase
+- Present findings to the user with:
+  - Summary of changes needed
+  - Justification for the changes
+  - Potential impact on functionality
+- **Wait for user approval before proceeding with merge**
+
+### 4. Sequential Merge Process
+Merge PRs one at a time to avoid conflicts and enable safe rollback:
+
+```bash
+# For each PR in sequence:
+# 1. Check for conflicts before starting
+gh pr view <PR_NUMBER>
+
+# 2. If conflicts exist, resolve them:
+gh pr checkout <PR_NUMBER>
+git fetch origin main
+git merge origin/main
+# Resolve conflicts in go.mod and go.sum manually
+go mod tidy
+git add .
+git commit -m "Resolve merge conflicts for <dependency> upgrade"
+git push origin HEAD:<branch_name>
+
+# 3. Wait for CI to complete
+gh pr checks <PR_NUMBER> --watch
+
+# 4. Merge only after all checks pass
+gh pr merge <PR_NUMBER> --squash
+
+# 5. Test the merged changes
+go test ./...
+go build -o klama-test .
+./klama-test version
+```
+
+### 5. Post-merge Validation
+After each merge:
+- Run full test suite: `go test ./...`
+- Build test binary: `go build -o klama-test .`
+- Test basic functionality: `./klama-test version`
+- Verify no regressions in core functionality
+
+### 6. Important Notes
+- Always use `klama-test` as the test binary name (already in .gitignore)
+- Some PRs may be automatically merged by GitHub if they're simple updates
+- Skip PRs that are already closed or auto-merged
+- If multiple PRs update the same dependency, only process the latest one
+- Commit changes between each PR merge for safe rollback capability
+
+### 7. Common Merge Conflict Resolution
+When resolving conflicts in go.mod:
+- Keep the higher version number for the target dependency
+- Use the latest toolchain version from main
+- Use the latest versions of other dependencies from main
+- Run `go mod tidy` after manual resolution
+- Ensure all tests pass before pushing the resolution
+
+### 8. CI Requirements
+- Never merge until all CI checks pass
+- Wait for all status checks (fmt_and_vet, unit tests on all platforms)
+- Use `gh pr checks --watch` to monitor CI progress
+- If CI fails, investigate and fix issues before merging
