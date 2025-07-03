@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Klama is an AI-powered CLI tool for troubleshooting DevOps issues, specifically focusing on Kubernetes debugging. It uses an interactive TUI (Terminal User Interface) built with Bubble Tea to provide a conversational interface where users can ask questions and receive AI-powered guidance with optional command execution.
 
+## Development Guidelines
+
+- **Never push directly to main branch**
+- If changes are made to the main branch, always:
+  - Create a new branch for changes
+  - Open a Pull Request (PR)
+  - Ask for review before merging
+  - Wait for explicit permission to merge
+
 ## Architecture
 
 The project follows a clean architecture pattern with these key components:
