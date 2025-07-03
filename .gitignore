@@ -27,5 +27,6 @@ go.work.sum
 # Local klama files
 .klama.yaml
 klama.debug
+klama-test
 
 dist/
