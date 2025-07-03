@@ -138,12 +138,46 @@ Each release includes:
 2. **Homebrew**: `brew install eliran89c/tap/klama`
 3. **Go Install**: `go install github.com/eliran89c/klama@latest`
 
+#### Commit Message Guidelines
+
+**IMPORTANT**: Always use conventional commit prefixes for proper changelog generation.
+
+**Commit Message Format**: `<type>: <description>`
+
+**Required Prefixes** (for changelog inclusion):
+- `feat:` - New features
+- `fix:` - Bug fixes  
+- `chore:` - Maintenance tasks, dependency updates, refactoring
+- `BREAKING CHANGE:` - Breaking changes
+
+**Other Prefixes** (not included in changelog but good practice):
+- `docs:` - Documentation changes
+- `test:` - Test additions or modifications
+- `ci:` - CI/CD pipeline changes
+- `refactor:` - Code refactoring without feature changes
+
+#### Dependabot PR Commit Mapping
+
+**When merging Dependabot PRs, ALWAYS create a proper commit message:**
+
+```bash
+# Instead of using the default merge message, use:
+gh pr merge <PR_NUMBER> --squash --body "chore: bump <package> from <old_version> to <new_version>"
+```
+
+**Examples**:
+```
+chore: bump github.com/charmbracelet/bubbletea from 1.3.4 to 1.3.5
+chore: bump github.com/spf13/cobra from 1.8.1 to 1.9.1
+chore: bump github.com/spf13/viper from 1.20.0 to 1.20.1
+```
+
 #### Changelog Configuration
 
-GoReleaser automatically generates changelogs from commits with prefixes:
+GoReleaser automatically generates changelogs from commits with these prefixes:
 - `feat:` - New features
 - `fix:` - Bug fixes
-- `chore:` - Maintenance tasks
+- `chore:` - Maintenance tasks (including dependency updates)
 - `BREAKING CHANGE:` - Breaking changes
 
 #### Creating a Release
@@ -238,8 +272,8 @@ git push origin HEAD:<branch_name>
 # 3. Wait for CI to complete
 gh pr checks <PR_NUMBER> --watch
 
-# 4. Merge only after all checks pass
-gh pr merge <PR_NUMBER> --squash
+# 4. Merge only after all checks pass with proper commit message
+gh pr merge <PR_NUMBER> --squash --body "chore: bump <package> from <old_version> to <new_version>"
 
 # 5. Test the merged changes
 go test ./...
